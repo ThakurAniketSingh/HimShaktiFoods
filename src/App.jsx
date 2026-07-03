@@ -3,6 +3,7 @@
 
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Outlet, useLocation } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import { ProductsProvider } from './context/ProductsContext'
 import { TestimonialsProvider } from './context/TestimonialsContext'
 import { ContactProvider } from './context/ContactContext'
@@ -180,6 +181,7 @@ export default function App() {
           <ToastProvider>
             <BrowserRouter>
               <ScrollToTop />
+              <Analytics />
               <Routes>
                 <Route element={<PublicLayout />}>
                   <Route path="/"             element={<Home />}       />
