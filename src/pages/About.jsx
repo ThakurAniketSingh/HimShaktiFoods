@@ -4,9 +4,8 @@ import { Link } from 'react-router-dom'
 
 const VALUES = [
   { icon:'🌱', label:'100% Natural'      },
-  { icon:'🧑‍🌾', label:'50+ Farmers'       },
-  { icon:'📦', label:'Pan India Delivery' },
   { icon:'🏔️', label:'Since 2009'         },
+  { icon:'📦', label:'Pan India Delivery' },
   { icon:'🫶', label:'No Middlemen'       },
 ]
 
@@ -95,7 +94,7 @@ export default function About() {
       {/* ── Stats strip ──────────────────────────────── */}
       <section className="bg-earth border-y border-forest/10 py-12">
         <div className="wrap">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-7">
             {VALUES.map(v => (
               <div key={v.label} className="flex flex-col items-center text-center gap-2">
                 <span className="text-3xl">{v.icon}</span>
