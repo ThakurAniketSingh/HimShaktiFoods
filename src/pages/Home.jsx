@@ -5,11 +5,9 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useTestimonials } from "../context/TestimonialsContext";
 import { useProducts } from "../context/ProductsContext";
-import { useContactInfo } from "../context/ContactContext";
 import { shuffleArray } from "../utils/shuffleArray";
 import { ProductCardSkeleton, TestiCardSkeleton } from "../components/Skeleton";
 import ProductCard from "../components/ProductCard";
-import WhatsAppIcon from "../components/WhatsAppIcon";
 
 // Picks a random set of APPROVED reviews, but only re-shuffles when the
 // actual set of approved review ids changes — not every time `testimonials`
@@ -38,45 +36,6 @@ function useMediaQuery(query) {
     return () => mql.removeEventListener("change", handler);
   }, [query]);
   return matches;
-}
-
-/* ── Floating WhatsApp CTA ───────────────────────────────────────── */
-function FloatingWA({ href }) {
-  const [show, setShow] = useState(false);
-  const heroRef = useRef(null);
-  useEffect(() => {
-    heroRef.current = document.getElementById("hero");
-    if (!heroRef.current) {
-      setShow(true);
-      return;
-    }
-    const obs = new IntersectionObserver(([e]) => setShow(!e.isIntersecting), {
-      rootMargin: "0px",
-    });
-    obs.observe(heroRef.current);
-    return () => obs.disconnect();
-  }, []);
-
-  // Don't render at all while contact data is still loading (href=null).
-  // The button appears only after the user scrolls past the hero, which
-  // takes longer than the API round-trip, so in practice it's always ready.
-  if (!href) return null;
-
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="Order on WhatsApp"
-      className={`fixed bottom-5 right-4 z-50 flex items-center gap-2 bg-wa hover:bg-wa-dk
-        text-white font-bold text-sm px-5 py-3 rounded-full shadow-xl shadow-green-500/30
-        transition-all duration-300
-        ${show ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"}`}
-    >
-      <WhatsAppIcon size={17} />
-      Order Now
-    </a>
-  );
 }
 
 /* ── Mountain watermark SVG ─────────────────────────────────────── */
@@ -184,10 +143,6 @@ function TestiCard({ t }) {
 export default function Home() {
   const { products, loading: productsLoading } = useProducts();
   const { testimonials, loading: reviewsLoading } = useTestimonials();
-  const { contact, loading: contactLoading } = useContactInfo();
-  const WA = contactLoading
-    ? null
-    : `https://wa.me/${contact.whatsappNumber}?text=${encodeURIComponent('Namaste HimShakti!')}`;
   const [featured, setFeatured] = useState([]);
   const randomReviews = useStableRandomReviews(testimonials, 4);
   const isMobile = useMediaQuery("(max-width: 767px)");
@@ -500,8 +455,6 @@ export default function Home() {
           </div>
         </section>
       )}
-
-      <FloatingWA href={WA} />
     </>
   );
 }

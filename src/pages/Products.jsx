@@ -9,10 +9,6 @@ import { ProductCardSkeleton } from '../components/Skeleton';
 
 const ITEMS_PER_PAGE = 6;
 
-// Keeps a stable shuffle ORDER (a list of ids) for the "All Products" view so
-// browsing doesn't reshuffle on every render — but always pulls the latest
-// product data for those ids, so an admin edit shows up immediately even
-// though the display order stays put.
 function useStableShuffleOrder(products) {
   const idsKey = useMemo(
     () => products.map((p) => p.id).sort((a, b) => a - b).join(','),
@@ -26,7 +22,6 @@ function useStableShuffleOrder(products) {
   return ref.current.order;
 }
 
-// Sort options shown inside the "Filter" pill's dropdown.
 const SORT_OPTIONS = [
   { value: 'default', label: 'Default' },
   { value: 'newest', label: 'Newly Added' },
@@ -46,13 +41,12 @@ export default function Products() {
   const gridRef = useRef(null);
   const isInitialMount = useRef(true);
 
-  // ── New filter controls: Sale (toggle), Category (dropdown), Filter/Sort (dropdown) ──
+  const [search, setSearch] = useState('');
   const [saleOnly, setSaleOnly] = useState(false);
   const [sortBy, setSortBy] = useState('default');
-  const [openMenu, setOpenMenu] = useState(null); // 'category' | 'filter' | null
+  const [openMenu, setOpenMenu] = useState(null);
   const filterBarRef = useRef(null);
 
-  // Close whichever dropdown is open when clicking anywhere outside the filter bar.
   useEffect(() => {
     function handleOutsideClick(e) {
       if (filterBarRef.current && !filterBarRef.current.contains(e.target)) {
@@ -72,11 +66,20 @@ export default function Products() {
   const filtered = useMemo(() => {
     let list = currentFilter === 'all' ? shuffledAll : products.filter((p) => p.category === currentFilter);
     if (saleOnly) list = list.filter((p) => p.onSale);
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter((p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q)
+      );
+    }
+
     if (sortBy === 'newest') list = [...list].sort((a, b) => b.id - a.id);
     else if (sortBy === 'price-asc') list = [...list].sort((a, b) => a.price - b.price);
     else if (sortBy === 'price-desc') list = [...list].sort((a, b) => b.price - a.price);
     return list;
-  }, [currentFilter, shuffledAll, products, saleOnly, sortBy]);
+  }, [currentFilter, shuffledAll, products, saleOnly, sortBy, search]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = useMemo(() => {
@@ -86,9 +89,8 @@ export default function Products() {
 
   useEffect(() => {
     setPage(1);
-  }, [currentFilter, saleOnly, sortBy]);
+  }, [currentFilter, saleOnly, sortBy, search]);
 
-  // Scroll handling – no global interference ab
   useEffect(() => {
     if (isInitialMount.current) {
       if (currentFilter === 'all') {
@@ -103,7 +105,7 @@ export default function Products() {
     } else {
       gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [currentFilter, page, saleOnly, sortBy]);
+  }, [currentFilter, page, saleOnly, sortBy, search]);
 
   const handleFilter = (cat) => {
     if (cat === 'all') setSearchParams({});
@@ -111,7 +113,7 @@ export default function Products() {
     setOpenMenu(null);
   };
 
-  const scrollOffset = isMobile ? 250 : 210;
+  const scrollOffset = isMobile ? 270 : 230;
 
   const visiblePages = useMemo(() => {
     if (totalPages <= MAX_VISIBLE)
@@ -127,7 +129,6 @@ export default function Products() {
 
   return (
     <section className="min-h-screen bg-mist">
-      {/* Banner */}
       <div className="bg-forest py-16 px-4 text-center relative overflow-hidden">
         <svg viewBox="0 0 900 160" preserveAspectRatio="xMidYMid slice"
           className="absolute inset-0 w-full h-full opacity-[0.055] pointer-events-none" aria-hidden>
@@ -145,70 +146,83 @@ export default function Products() {
       </div>
 
       <div className="wrap py-12">
-        <div ref={filterBarRef} className="flex flex-wrap justify-center gap-2 mb-4" role="group" aria-label="Sale, category and sort filters">
-          {/* 1. Sale pill — no dropdown, just toggles "show only on-sale products" */}
-          <button
-            onClick={() => { setSaleOnly((s) => !s); setOpenMenu(null); }}
-            className={`px-4 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 border
-              ${saleOnly
-                ? 'bg-forest text-white border-forest shadow-sm'
-                : 'bg-white text-ink-2 border-forest/15 hover:border-forest/40 hover:text-forest'
-              }`}
-            aria-pressed={saleOnly}>
-            🔥 Sale
-          </button>
-
-          {/* 2. Category pill — opens a dropdown with every category */}
-          <div className="relative">
-            <button
-              onClick={() => setOpenMenu((m) => (m === 'category' ? null : 'category'))}
-              className={`px-4 py-2 rounded-full text-[13px] font-semibold capitalize transition-all duration-200 border flex items-center gap-1.5
-                ${currentFilter !== 'all'
-                  ? 'bg-forest text-white border-forest shadow-sm'
-                  : 'bg-white text-ink-2 border-forest/15 hover:border-forest/40 hover:text-forest'
-                }`}
-              aria-haspopup="listbox" aria-expanded={openMenu === 'category'}>
-              Category{currentFilter !== 'all' ? `: ${currentFilter}` : ''}
-              <span className="text-[10px]">▾</span>
-            </button>
-            {openMenu === 'category' && (
-              <div role="listbox" className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl2 border border-forest/12 shadow-lg py-1.5 max-h-64 overflow-y-auto">
-                {CATS.map((cat) => (
-                  <button key={cat} role="option" aria-selected={currentFilter === cat} onClick={() => handleFilter(cat)}
-                    className={`w-full text-left px-4 py-2 text-[13px] capitalize transition-colors
-                      ${currentFilter === cat ? 'text-forest font-bold bg-earth' : 'text-ink-2 hover:bg-earth'}`}>
-                    {cat === 'all' ? 'All Categories' : cat}
-                  </button>
-                ))}
-              </div>
-            )}
+        {/* ─── Search Bar + Filter Pills ─── */}
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 mb-5">
+          <div className="relative flex-1 w-full sm:min-w-[240px]">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-3 text-sm">🔍</span>
+            <input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Search products by name or category…"
+              className="w-full pl-10 pr-4 py-2.5 rounded-full border border-forest/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-amber/20 focus:border-amber transition-shadow"
+            />
           </div>
 
-          {/* 3. Filter pill — opens a dropdown with sort options (newest, price low/high) */}
-          <div className="relative">
+          <div ref={filterBarRef} className="flex flex-wrap justify-center sm:justify-end sm:flex-shrink-0 gap-2 mt-3 sm:mt-0" role="group" aria-label="Sale, category and sort filters">
             <button
-              onClick={() => setOpenMenu((m) => (m === 'filter' ? null : 'filter'))}
-              className={`px-4 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 border flex items-center gap-1.5
-                ${sortBy !== 'default'
+              onClick={() => { setSaleOnly((s) => !s); setOpenMenu(null); }}
+              className={`px-4 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 border
+                ${saleOnly
                   ? 'bg-forest text-white border-forest shadow-sm'
                   : 'bg-white text-ink-2 border-forest/15 hover:border-forest/40 hover:text-forest'
                 }`}
-              aria-haspopup="listbox" aria-expanded={openMenu === 'filter'}>
-              Filter{sortBy !== 'default' ? `: ${SORT_OPTIONS.find((o) => o.value === sortBy)?.label}` : ''}
-              <span className="text-[10px]">▾</span>
+              aria-pressed={saleOnly}>
+              🔥 Sale
             </button>
-            {openMenu === 'filter' && (
-              <div role="listbox" className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl2 border border-forest/12 shadow-lg py-1.5 max-h-64 overflow-y-auto">
-                {SORT_OPTIONS.map((opt) => (
-                  <button key={opt.value} role="option" aria-selected={sortBy === opt.value}
-                    onClick={() => { setSortBy(opt.value); setOpenMenu(null); }}
-                    className={`w-full text-left px-4 py-2 text-[13px] transition-colors
-                      ${sortBy === opt.value ? 'text-forest font-bold bg-earth' : 'text-ink-2 hover:bg-earth'}`}>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
+
+            <div className="relative">
+              <button
+                onClick={() => setOpenMenu((m) => (m === 'category' ? null : 'category'))}
+                className={`px-4 py-2 rounded-full text-[13px] font-semibold capitalize transition-all duration-200 border flex items-center gap-1.5
+                  ${currentFilter !== 'all'
+                    ? 'bg-forest text-white border-forest shadow-sm'
+                    : 'bg-white text-ink-2 border-forest/15 hover:border-forest/40 hover:text-forest'
+                  }`}
+                aria-haspopup="listbox" aria-expanded={openMenu === 'category'}>
+                Category{currentFilter !== 'all' ? `: ${currentFilter}` : ''}
+                <span className="text-[10px]">▾</span>
+              </button>
+              {openMenu === 'category' && (
+                <div role="listbox" className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl2 border border-forest/12 shadow-lg py-1.5 max-h-64 overflow-y-auto">
+                  {CATS.map((cat) => (
+                    <button key={cat} role="option" aria-selected={currentFilter === cat} onClick={() => handleFilter(cat)}
+                      className={`w-full text-left px-4 py-2 text-[13px] capitalize transition-colors
+                        ${currentFilter === cat ? 'text-forest font-bold bg-earth' : 'text-ink-2 hover:bg-earth'}`}>
+                      {cat === 'all' ? 'All Categories' : cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="relative">
+              <button
+                onClick={() => setOpenMenu((m) => (m === 'filter' ? null : 'filter'))}
+                className={`px-4 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 border flex items-center gap-1.5
+                  ${sortBy !== 'default'
+                    ? 'bg-forest text-white border-forest shadow-sm'
+                    : 'bg-white text-ink-2 border-forest/15 hover:border-forest/40 hover:text-forest'
+                  }`}
+                aria-haspopup="listbox" aria-expanded={openMenu === 'filter'}>
+                Filter{sortBy !== 'default' ? `: ${SORT_OPTIONS.find((o) => o.value === sortBy)?.label}` : ''}
+                <span className="text-[10px]">▾</span>
+              </button>
+              {openMenu === 'filter' && (
+                <div role="listbox" className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl2 border border-forest/12 shadow-lg py-1.5 max-h-64 overflow-y-auto">
+                  {SORT_OPTIONS.map((opt) => (
+                    <button key={opt.value} role="option" aria-selected={sortBy === opt.value}
+                      onClick={() => { setSortBy(opt.value); setOpenMenu(null); }}
+                      className={`w-full text-left px-4 py-2 text-[13px] transition-colors
+                        ${sortBy === opt.value ? 'text-forest font-bold bg-earth' : 'text-ink-2 hover:bg-earth'}`}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -221,24 +235,17 @@ export default function Products() {
                 <ProductCardSkeleton key={i} />
               ))}
             </div>
-          ) : paginated.length > 0 ? (
-            <>
-              {error && (
-                <p className="text-center text-xs text-amber bg-amber/10 rounded-lg py-2 px-3 mb-4">
-                  ⚠️ Showing previously loaded products — couldn't refresh from the server ({error}).
-                </p>
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
-                {paginated.map((p) => <ProductCard key={p.id} product={p} />)}
-              </div>
-            </>
           ) : error ? (
             <div className="text-center py-20 text-sm">
               <p className="text-red-600 font-medium mb-1">⚠️ Couldn't load products</p>
               <p className="text-ink-3">{error}</p>
             </div>
+          ) : paginated.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+              {paginated.map((p) => <ProductCard key={p.id} product={p} />)}
+            </div>
           ) : (
-            <div className="text-center py-20 text-ink-3 text-sm">No products found in this category.</div>
+            <div className="text-center py-20 text-ink-3 text-sm">No products found matching your criteria.</div>
           )}
         </div>
 

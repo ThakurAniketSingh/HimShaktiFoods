@@ -3,8 +3,6 @@
 
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Outlet, useLocation } from 'react-router-dom'
-import { Analytics } from '@vercel/analytics/react'
-import { SpeedInsights } from '@vercel/speed-insights/react'
 import { ProductsProvider } from './context/ProductsContext'
 import { TestimonialsProvider } from './context/TestimonialsContext'
 import { ContactProvider } from './context/ContactContext'
@@ -12,6 +10,7 @@ import { ToastProvider } from './admin/ToastContext'
 import ProtectedRoute from './admin/ProtectedRoute'
 import AdminLayout from './admin/AdminLayout'
 import ScrollToTop from './components/ScrollToTop';
+import ChatWidget from './components/ChatWidget';
 import Navbar     from './components/Navbar'
 import Footer     from './components/Footer'
 import Home       from './pages/Home'
@@ -149,7 +148,9 @@ function AdminLoginSkeleton() {
   );
 }
 
-// Wraps every public-facing page with the storefront's Navbar + Footer.
+// Wraps every public-facing page with the storefront's Navbar + Footer,
+// plus the site-wide AI chat assistant (never shown on /admin/* routes,
+// since AdminLayout — used for every admin page — doesn't render this).
 function PublicLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-mist font-sans">
@@ -158,6 +159,7 @@ function PublicLayout() {
         <Outlet />
       </main>
       <Footer />
+      <ChatWidget />
     </div>
   )
 }
@@ -182,8 +184,6 @@ export default function App() {
           <ToastProvider>
             <BrowserRouter>
               <ScrollToTop />
-              <Analytics />
-              <SpeedInsights />
               <Routes>
                 <Route element={<PublicLayout />}>
                   <Route path="/"             element={<Home />}       />

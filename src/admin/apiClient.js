@@ -78,4 +78,6 @@ export const api = {
   getContactInfo: () => request('/contact'),
   getContactMeta: () => request('/contact?meta=1'),
   updateContactInfo: (updates, adminKey) => request('/contact', { method: 'PUT', body: updates, adminKey }),
+
+  sendChatMessage: (messages) => request('/chat', { method: 'POST', body: { messages } }),
 };

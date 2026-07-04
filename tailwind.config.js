@@ -24,6 +24,7 @@ export default {
         'fade-up-d1': 'fadeUp 0.55s 0.12s ease both',
         'fade-up-d2': 'fadeUp 0.55s 0.24s ease both',
         'fade-up-d3': 'fadeUp 0.55s 0.36s ease both',
+        'fade-in':    'fadeIn 0.3s ease both',
         'float':      'floatY 5.0s 0.0s ease-in-out infinite',
         'float-1':    'floatY 5.2s 0.6s ease-in-out infinite',
         'float-2':    'floatY 4.8s 1.2s ease-in-out infinite',
@@ -35,6 +36,10 @@ export default {
         fadeUp: {
           from: { opacity: '0', transform: 'translateY(22px)' },
           to:   { opacity: '1', transform: 'translateY(0)'    },
+        },
+        fadeIn: {
+          from: { opacity: '0' },
+          to:   { opacity: '1' },
         },
         floatY: {
           '0%,100%': { transform: 'translateY(0)'    },
