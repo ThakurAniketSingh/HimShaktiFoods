@@ -221,14 +221,21 @@ export default function Products() {
                 <ProductCardSkeleton key={i} />
               ))}
             </div>
+          ) : paginated.length > 0 ? (
+            <>
+              {error && (
+                <p className="text-center text-xs text-amber bg-amber/10 rounded-lg py-2 px-3 mb-4">
+                  ⚠️ Showing previously loaded products — couldn't refresh from the server ({error}).
+                </p>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+                {paginated.map((p) => <ProductCard key={p.id} product={p} />)}
+              </div>
+            </>
           ) : error ? (
             <div className="text-center py-20 text-sm">
               <p className="text-red-600 font-medium mb-1">⚠️ Couldn't load products</p>
               <p className="text-ink-3">{error}</p>
-            </div>
-          ) : paginated.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
-              {paginated.map((p) => <ProductCard key={p.id} product={p} />)}
             </div>
           ) : (
             <div className="text-center py-20 text-ink-3 text-sm">No products found in this category.</div>
