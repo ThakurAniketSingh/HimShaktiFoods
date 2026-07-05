@@ -177,14 +177,29 @@ export default function ChatWidget() {
 
   return (
     <>
+      {/* ── Backdrop — phones / small screens ONLY ──────────────── */}
+      {/* `sm:hidden` means this never renders at all on tablet/desktop —
+          it only ever appears below that breakpoint. It sits on top of
+          the page (but under the panel) purely to dim + blur the
+          background while chatting on a small screen; it has no
+          onClick, so tapping it does nothing — it only BLOCKS taps from
+          reaching whatever is underneath. */}
+      {open && (
+        <div
+          className="fixed inset-0 z-[45] bg-forest/50 backdrop-blur-sm sm:hidden"
+          aria-hidden="true"
+        />
+      )}
+
       {/* ── Chat panel ──────────────────────────────────────────── */}
       {open && (
         <div
           id={panelId}
           role="dialog"
           aria-label="HimShakti chat assistant"
-          className="fixed z-50 bottom-24 right-4 left-4 sm:left-auto sm:right-6
-            sm:w-[368px] h-[min(70vh,520px)] bg-white rounded-xl2 shadow-2xl
+          className="fixed z-50 bottom-4 right-4 left-4 h-[min(70vh,520px)]
+            sm:bottom-6 sm:left-auto sm:right-6 sm:w-[368px]
+            bg-white rounded-xl2 shadow-2xl
             border border-forest/10 flex flex-col overflow-hidden animate-modal-in"
         >
           {/* Header */}
@@ -293,7 +308,13 @@ export default function ChatWidget() {
           was overriding `fixed`, so the button rendered in normal page
           flow (right after the Footer) instead of floating — exactly
           the "stuck at the bottom-left, half cut off" bug. */}
-      <div className="fixed bottom-5 right-4 z-50">
+      <div className={`fixed bottom-5 right-4 z-50 ${open ? 'hidden' : ''}`}>
+        {/* Once the panel is open, its own header ✕ button is the only
+            way to close it — this launcher button disappears entirely
+            (every screen size) while open, exactly like it does on a
+            phone's app icon, and reappears the moment the panel closes.
+            This also frees up the space it was reserving at the bottom
+            of the panel — see the panel's own `bottom-*` classes above. */}
         <button
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? 'Close chat assistant' : 'Open chat assistant'}
