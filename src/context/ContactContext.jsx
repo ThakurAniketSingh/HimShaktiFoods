@@ -73,7 +73,7 @@ function writeVersionCache(version) {
 }
 
 // ── Hardcoded fallback ─────────────────────────────────────────────
-export const DEFAULT_CONTACT = {
+const DEFAULT_CONTACT = {
   address: 'Rural Industrial Cluster, Near Haldwani,\nNainital District, Uttarakhand — 263139',
   phone: '+91 89234 29380',
   hours: 'Mon–Sat · 9 AM – 7 PM',

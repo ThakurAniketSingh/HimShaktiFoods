@@ -15,7 +15,7 @@ export function Skeleton({ className = '' }) {
    lines, a weight-chip + price row, then a button-shaped block. */
 export function ProductCardSkeleton() {
   return (
-    <div className="flex flex-col bg-white rounded-xl2 overflow-hidden border border-forest/8">
+    <div className="flex flex-col bg-surface rounded-xl2 overflow-hidden border border-edge/8">
       <Skeleton className="h-[168px] w-full rounded-none" />
       <div className="flex flex-col gap-2.5 p-4">
         <Skeleton className="h-2.5 w-20 rounded" />
@@ -35,12 +35,12 @@ export function ProductCardSkeleton() {
 /* Matches TestiCard's layout: a few text lines, then an avatar + name row. */
 export function TestiCardSkeleton() {
   return (
-    <div className="bg-white rounded-xl2 p-6 flex flex-col border border-forest/8">
+    <div className="bg-surface rounded-xl2 p-6 flex flex-col border border-edge/8">
       <Skeleton className="h-4 w-24 rounded mb-3" />
       <Skeleton className="h-3.5 w-full rounded mb-2" />
       <Skeleton className="h-3.5 w-5/6 rounded mb-2" />
       <Skeleton className="h-3.5 w-4/6 rounded mb-5" />
-      <div className="flex items-center gap-3 pt-4 border-t border-forest/6">
+      <div className="flex items-center gap-3 pt-4 border-t border-edge/6">
         <Skeleton className="w-9 h-9 rounded-full" />
         <div className="flex flex-col gap-1.5">
           <Skeleton className="h-3 w-24 rounded" />
@@ -55,7 +55,7 @@ export function TestiCardSkeleton() {
    price, and the edit/delete button pair. */
 export function ProductRowSkeleton() {
   return (
-    <div className="flex items-center gap-4 bg-white rounded-xl2 border border-forest/8 p-3 sm:p-3.5">
+    <div className="flex items-center gap-4 bg-surface rounded-xl2 border border-edge/8 p-3 sm:p-3.5">
       <Skeleton className="w-14 h-14 rounded-xl shrink-0" />
       <div className="flex-1 min-w-[140px] flex flex-col gap-1.5">
         <Skeleton className="h-3.5 w-1/3 rounded" />
@@ -75,7 +75,7 @@ export function ProductRowSkeleton() {
    the action-button pair. */
 export function ReviewRowSkeleton() {
   return (
-    <div className="flex items-start gap-4 bg-white rounded-xl2 border border-forest/8 p-3.5 sm:p-4">
+    <div className="flex items-start gap-4 bg-surface rounded-xl2 border border-edge/8 p-3.5 sm:p-4">
       <Skeleton className="w-12 h-12 rounded-full shrink-0" />
       <div className="flex-1 min-w-[180px] flex flex-col gap-1.5">
         <Skeleton className="h-3.5 w-1/4 rounded" />
@@ -94,7 +94,7 @@ export function ReviewRowSkeleton() {
    icon badge, a big number, and a label line. */
 export function FilterCardSkeleton() {
   return (
-    <div className="rounded-xl2 p-4 sm:p-5 border-2 border-forest/8 bg-white">
+    <div className="rounded-xl2 p-4 sm:p-5 border-2 border-edge/8 bg-surface">
       <Skeleton className="w-9 h-9 rounded-lg mb-2.5" />
       <Skeleton className="h-7 w-10 rounded mb-2" />
       <Skeleton className="h-2.5 w-20 rounded" />
@@ -116,7 +116,7 @@ export function FormFieldSkeleton({ tall = false }) {
 /* Matches one contact-detail card (icon + label + a line of text). */
 export function ContactDetailSkeleton() {
   return (
-    <div className="flex gap-4 bg-white rounded-xl2 p-5 border border-forest/8">
+    <div className="flex gap-4 bg-surface rounded-xl2 p-5 border border-edge/8">
       <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
       <div className="flex-1 flex flex-col gap-2 justify-center">
         <Skeleton className="h-2.5 w-20 rounded" />

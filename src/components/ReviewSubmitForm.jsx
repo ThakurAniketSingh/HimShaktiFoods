@@ -95,9 +95,9 @@ export default function ReviewSubmitForm() {
 
   if (submitted) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-center bg-white rounded-xl2 p-8 border border-forest/8">
+      <div className="h-full flex flex-col items-center justify-center text-center bg-surface rounded-xl2 p-8 border border-edge/8">
         <p className="text-4xl mb-3">🙏</p>
-        <h3 className="font-serif text-forest text-xl mb-2">Thank you!</h3>
+        <h3 className="font-serif text-heading text-xl mb-2">Thank you!</h3>
         <p className="text-sm text-ink-2 leading-relaxed max-w-sm mx-auto">
           We've received your review. It'll appear on our Home page once one of our team approves it.
         </p>
@@ -107,7 +107,7 @@ export default function ReviewSubmitForm() {
               setForm(EMPTY_FORM);
               setSubmitted(false);
             }}
-            className="mt-5 text-sm font-semibold text-forest underline underline-offset-2 hover:text-grove"
+            className="mt-5 text-sm font-semibold text-heading underline underline-offset-2 hover:text-grove"
           >
             Leave another review
           </button>
@@ -117,7 +117,7 @@ export default function ReviewSubmitForm() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-white rounded-xl2 p-6 sm:p-7 border border-forest/8">
+    <div className="h-full flex flex-col bg-surface rounded-xl2 p-6 sm:p-7 border border-edge/8">
       <p className="text-[13px] text-ink-3 mb-6 leading-relaxed">
         Tell other customers about your experience. Reviews are checked by our team before they go live.
       </p>
@@ -153,7 +153,7 @@ export default function ReviewSubmitForm() {
                 placeholder="eg: Aniket Singh"
                 maxLength={30}
                 className={`w-full px-4 py-2.5 rounded-xl border text-sm text-ink bg-mist focus:outline-none focus:ring-2 focus:ring-amber/20 transition-shadow
-                  ${errors.name ? 'border-red-400' : 'border-forest/15 focus:border-amber'}`}
+                  ${errors.name ? 'border-red-400' : 'border-edge/15 focus:border-amber'}`}
               />
               {errors.name && <p className="text-red-600 text-xs mt-1.5 font-medium">⚠️ {errors.name}</p>}
             </div>
@@ -169,7 +169,7 @@ export default function ReviewSubmitForm() {
                 placeholder="eg: Dehradun"
                 maxLength={30}
                 className={`w-full px-4 py-2.5 rounded-xl border text-sm text-ink bg-mist focus:outline-none focus:ring-2 focus:ring-amber/20 transition-shadow
-                  ${errors.city ? 'border-red-400' : 'border-forest/15 focus:border-amber'}`}
+                  ${errors.city ? 'border-red-400' : 'border-edge/15 focus:border-amber'}`}
               />
               {errors.city && <p className="text-red-600 text-xs mt-1.5 font-medium">⚠️ {errors.city}</p>}
             </div>
@@ -186,7 +186,7 @@ export default function ReviewSubmitForm() {
               onChange={handlePhoneChange}
               placeholder="eg: 9876543210"
               className={`w-full px-4 py-2.5 rounded-xl border text-sm text-ink bg-mist focus:outline-none focus:ring-2 focus:ring-amber/20 transition-shadow
-                ${errors.phone ? 'border-red-400' : 'border-forest/15 focus:border-amber'}`}
+                ${errors.phone ? 'border-red-400' : 'border-edge/15 focus:border-amber'}`}
             />
             {errors.phone ? (
               <p className="text-red-600 text-xs mt-1.5 font-medium">⚠️ {errors.phone}</p>
@@ -208,7 +208,7 @@ export default function ReviewSubmitForm() {
                   aria-label={`${n} star${n === 1 ? '' : 's'}`}
                   className="text-2xl leading-none transition-transform hover:scale-110"
                 >
-                  <span className={n <= form.rating ? 'text-amber' : 'text-forest/15'}>★</span>
+                  <span className={n <= form.rating ? 'text-amber' : 'text-heading/15'}>★</span>
                 </button>
               ))}
               <span className="text-xs text-ink-3 ml-2">{form.rating} / 5</span>
@@ -236,7 +236,7 @@ export default function ReviewSubmitForm() {
               placeholder="What did you like? How was the quality, taste, or delivery?"
               maxLength={150}
               className={`w-full flex-1 px-4 py-2.5 rounded-xl border text-sm text-ink bg-mist focus:outline-none focus:ring-2 focus:ring-amber/20 transition-shadow resize-none
-                ${errors.text ? 'border-red-400' : 'border-forest/15 focus:border-amber'}`}
+                ${errors.text ? 'border-red-400' : 'border-edge/15 focus:border-amber'}`}
             />
             {errors.text && <p className="text-red-600 text-xs mt-1.5 font-medium">⚠️ {errors.text}</p>}
           </div>

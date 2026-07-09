@@ -6,9 +6,9 @@ import { BrowserRouter, Routes, Route, Outlet, useLocation } from 'react-router-
 import { ProductsProvider } from './context/ProductsContext'
 import { TestimonialsProvider } from './context/TestimonialsContext'
 import { ContactProvider } from './context/ContactContext'
+import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './admin/ToastContext'
 import ProtectedRoute from './admin/ProtectedRoute'
-import AdminLayout from './admin/AdminLayout'
 import ScrollToTop from './components/ScrollToTop';
 import ChatWidget from './components/ChatWidget';
 import Navbar     from './components/Navbar'
@@ -21,12 +21,11 @@ import Contact    from './pages/Contact'
 import NotFound   from './pages/NotFound'
 import { Skeleton, FilterCardSkeleton, ProductRowSkeleton, ReviewRowSkeleton, FormFieldSkeleton } from './components/Skeleton'
 
-// Admin pages are lazy-loaded: regular visitors (the vast majority of
-// traffic) never download this code at all — it's only fetched the moment
-// someone actually navigates to /admin/*. AdminLayout itself stays a
-// normal (non-lazy) import — it's tiny, and keeping it eager means the
-// header + tab bar render instantly, with only the page CONTENT below it
-// showing a skeleton while that page's own chunk downloads.
+// Admin pages AND the admin layout chrome (header, tabs, logout, theme
+// toggle wiring) are all lazy-loaded: regular visitors — the vast
+// majority of traffic — never download ANY of this code. It's only
+// fetched the moment someone actually navigates to /admin/*.
+const AdminLayout    = lazy(() => import('./admin/AdminLayout'))
 const AdminLogin     = lazy(() => import('./admin/AdminLogin'))
 const AdminDashboard = lazy(() => import('./admin/AdminDashboard'))
 const AdminReviews   = lazy(() => import('./admin/AdminReviews'))
@@ -67,7 +66,7 @@ function AdminContentSkeleton() {
       <div className={`flex flex-wrap items-start justify-between gap-4 mb-7 ${isContact ? '' : ''}`}>
         <div>
           <div className="eyebrow mb-2">Admin Panel</div>
-          <h1 className="font-serif text-forest text-[1.8rem] sm:text-[2.1rem]">{page.title}</h1>
+          <h1 className="font-serif text-heading text-[1.8rem] sm:text-[2.1rem]">{page.title}</h1>
           {isContact ? (
             <p className="text-ink-3 text-sm mt-1">
               Everything here shows up on the public <strong>Contact &amp; Location</strong> page immediately after saving.
@@ -136,13 +135,40 @@ function AdminContentSkeleton() {
 function AdminLoginSkeleton() {
   return (
     <div className="min-h-screen bg-mist flex items-center justify-center p-4" aria-hidden="true">
-      <div className="w-full max-w-sm bg-white rounded-xl2 border border-forest/8 p-7">
+      <div className="w-full max-w-sm bg-surface rounded-xl2 border border-edge/8 p-7">
         <Skeleton className="w-12 h-12 rounded-xl mb-4" />
         <Skeleton className="h-5 w-2/3 rounded mb-2" />
         <Skeleton className="h-3 w-4/5 rounded mb-6" />
         <Skeleton className="h-3 w-20 rounded mb-2" />
         <Skeleton className="h-11 w-full rounded-xl mb-5" />
         <Skeleton className="h-11 w-full rounded-full" />
+      </div>
+    </div>
+  );
+}
+
+// Shown very briefly before AdminLayout's own chunk (header + tab bar)
+// finishes downloading — typically resolves almost instantly since that
+// chunk is tiny, but this avoids a jarring blank flash on a slow connection.
+function AdminShellSkeleton() {
+  return (
+    <div className="min-h-screen bg-mist" aria-hidden="true">
+      <div className="bg-forest h-16" />
+      <div className="bg-surface border-b border-edge/10 h-[53px] flex items-center">
+        <div className="wrap flex gap-2">
+          <Skeleton className="h-8 w-24 rounded-full" />
+          <Skeleton className="h-8 w-24 rounded-full" />
+          <Skeleton className="h-8 w-28 rounded-full" />
+        </div>
+      </div>
+      <div className="wrap py-8 sm:py-10">
+        <Skeleton className="h-8 w-56 rounded mb-8" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <FilterCardSkeleton key={i} />
+          ))}
+        </div>
+        <Skeleton className="h-[42px] w-full rounded-full" />
       </div>
     </div>
   );
@@ -164,55 +190,62 @@ function PublicLayout() {
   )
 }
 
-// Wraps a lazy-loaded admin page with the (eager, instant) AdminLayout
-// chrome and a matching skeleton for the moment its own chunk is loading.
+// Wraps a lazy-loaded admin page with the (also lazy-loaded) AdminLayout
+// chrome. Two nested Suspense boundaries: the outer one covers the brief
+// moment AdminLayout's own chunk is downloading (AdminShellSkeleton), the
+// inner one covers the specific page's chunk + data loading
+// (AdminContentSkeleton) once the chrome is already showing.
 function AdminPage({ children }) {
   return (
     <ProtectedRoute>
-      <AdminLayout>
-        <Suspense fallback={<AdminContentSkeleton />}>{children}</Suspense>
-      </AdminLayout>
+      <Suspense fallback={<AdminShellSkeleton />}>
+        <AdminLayout>
+          <Suspense fallback={<AdminContentSkeleton />}>{children}</Suspense>
+        </AdminLayout>
+      </Suspense>
     </ProtectedRoute>
   );
 }
 
 export default function App() {
   return (
-    <ProductsProvider>
-      <TestimonialsProvider>
-        <ContactProvider>
-          <ToastProvider>
-            <BrowserRouter>
-              <ScrollToTop />
-              <Routes>
-                <Route element={<PublicLayout />}>
-                  <Route path="/"             element={<Home />}       />
-                  <Route path="/products"     element={<Products />}   />
-                  <Route path="/about"        element={<About />}      />
-                  <Route path="/how-to-order" element={<HowToOrder />} />
-                  <Route path="/contact"      element={<Contact />}    />
-                  <Route path="*"             element={<NotFound />}   />
-                </Route>
+    <ThemeProvider>
+      <ProductsProvider>
+        <TestimonialsProvider>
+          <ContactProvider>
+            <ToastProvider>
+              <BrowserRouter>
+                <ScrollToTop />
+                <Routes>
+                  <Route element={<PublicLayout />}>
+                    <Route path="/"             element={<Home />}       />
+                    <Route path="/products"     element={<Products />}   />
+                    <Route path="/about"        element={<About />}      />
+                    <Route path="/how-to-order" element={<HowToOrder />} />
+                    <Route path="/contact"      element={<Contact />}    />
+                    <Route path="*"             element={<NotFound />}   />
+                  </Route>
 
-                <Route path="/admin/login" element={
-                  <Suspense fallback={<AdminLoginSkeleton />}>
-                    <AdminLogin />
-                  </Suspense>
-                } />
-                <Route path="/admin" element={
-                  <AdminPage><AdminDashboard /></AdminPage>
-                } />
-                <Route path="/admin/reviews" element={
-                  <AdminPage><AdminReviews /></AdminPage>
-                } />
-                <Route path="/admin/contact" element={
-                  <AdminPage><AdminContact /></AdminPage>
-                } />
-              </Routes>
-            </BrowserRouter>
-          </ToastProvider>
-        </ContactProvider>
-      </TestimonialsProvider>
-    </ProductsProvider>
+                  <Route path="/admin/login" element={
+                    <Suspense fallback={<AdminLoginSkeleton />}>
+                      <AdminLogin />
+                    </Suspense>
+                  } />
+                  <Route path="/admin" element={
+                    <AdminPage><AdminDashboard /></AdminPage>
+                  } />
+                  <Route path="/admin/reviews" element={
+                    <AdminPage><AdminReviews /></AdminPage>
+                  } />
+                  <Route path="/admin/contact" element={
+                    <AdminPage><AdminContact /></AdminPage>
+                  } />
+                </Routes>
+              </BrowserRouter>
+            </ToastProvider>
+          </ContactProvider>
+        </TestimonialsProvider>
+      </ProductsProvider>
+    </ThemeProvider>
   )
 }

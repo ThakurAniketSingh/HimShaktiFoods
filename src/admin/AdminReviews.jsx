@@ -30,10 +30,10 @@ const SORT_OPTIONS = [
 ];
 
 const THEME = {
-  ink: { activeBg: 'bg-forest border-forest', iconBg: 'bg-ink-2/10 text-ink-2' },
-  amber: { activeBg: 'bg-forest border-forest', iconBg: 'bg-amber/10 text-amber' },
-  forest: { activeBg: 'bg-forest border-forest', iconBg: 'bg-forest/10 text-forest' },
-  red: { activeBg: 'bg-forest border-forest', iconBg: 'bg-red-50 text-red-500' },
+  ink: { activeBg: 'bg-forest dark:bg-sage border-edge', iconBg: 'bg-ink-2/10 text-ink-2' },
+  amber: { activeBg: 'bg-forest dark:bg-sage border-edge', iconBg: 'bg-amber/10 text-amber' },
+  forest: { activeBg: 'bg-forest dark:bg-sage border-edge', iconBg: 'bg-heading/10 text-heading' },
+  red: { activeBg: 'bg-forest dark:bg-sage border-edge', iconBg: 'bg-red-50 text-red-500 dark:bg-red-500/20 dark:text-red-400' },
 };
 
 function StarRow({ rating }) {
@@ -93,14 +93,14 @@ export default function AdminReviews() {
       else if (t.status === 'rejected') rejected++;
       else active++; // 'approved', or legacy rows with no status set
     }
-    return { all: pending + active, pending, active, rejected };
+    return { all: testimonials.length, pending, active, rejected };
   }, [testimonials]);
 
   const FILTER_CARDS = [
     { key: 'all', label: 'All Reviews', icon: '📋', count: counts.all, theme: 'ink' },
-    { key: 'pending', label: 'Pending Reviews', icon: '🕓', count: counts.pending, theme: 'amber', dot: counts.pending > 0 },
     { key: 'active', label: 'Active Reviews', icon: '✅', count: counts.active, theme: 'forest' },
-    { key: 'rejected', label: 'Rejected', icon: '❌', count: counts.rejected, theme: 'red' },
+    { key: 'pending', label: 'Pending Reviews', icon: '🕓', count: counts.pending, theme: 'amber', dot: counts.pending > 0 },
+    { key: 'rejected', label: 'Rejected Reviews', icon: '❌', count: counts.rejected, theme: 'red' },
   ];
 
   const statusFiltered = useMemo(() => {
@@ -112,7 +112,8 @@ export default function AdminReviews() {
       case 'rejected':
         return testimonials.filter((t) => t.status === 'rejected');
       default:
-        return testimonials.filter((t) => t.status !== 'rejected'); // 'all'
+        // 'all': Randomize by default so it's a mix of all reviews
+        return [...testimonials].sort(() => Math.random() - 0.5);
     }
   }, [testimonials, activeFilter]);
 
@@ -256,7 +257,7 @@ export default function AdminReviews() {
         <div className="flex flex-wrap items-start justify-between gap-4 mb-7">
           <div>
             <div className="eyebrow mb-2">Admin Panel</div>
-            <h1 className="font-serif text-forest text-[1.8rem] sm:text-[2.1rem]">Manage Reviews</h1>
+            <h1 className="font-serif text-heading text-[1.8rem] sm:text-[2.1rem]">Manage Reviews</h1>
             <p className="text-ink-3 text-sm mt-1">
               Tap a card below to see Pending, Active, or Rejected reviews. Approved reviews show up in "What People
               Say" on the Home page.
@@ -315,7 +316,7 @@ export default function AdminReviews() {
                     className={`relative text-left rounded-xl2 p-4 sm:p-5 border-2 transition-all duration-200
                       ${isActive
                         ? `${theme.activeBg} shadow-md`
-                        : 'bg-white border-forest/8 hover:border-forest/25 hover:-translate-y-0.5 hover:shadow-sm'
+                        : 'bg-surface border-edge/8 hover:border-edge/25 hover:-translate-y-0.5 hover:shadow-sm'
                       }`}
                   >
                     {card.dot && (
@@ -327,7 +328,7 @@ export default function AdminReviews() {
                     >
                       {card.icon}
                     </div>
-                    <p className={`font-serif text-2xl sm:text-3xl ${isActive ? 'text-white' : 'text-forest'}`}>{card.count}</p>
+                    <p className={`font-serif text-2xl sm:text-3xl ${isActive ? 'text-white' : 'text-heading'}`}>{card.count}</p>
                     <p className={`text-[11px] font-semibold mt-1 tracking-wide uppercase ${isActive ? 'text-white/80' : 'text-ink-3'}`}>
                       {card.label}
                     </p>
@@ -347,7 +348,7 @@ export default function AdminReviews() {
                     setPage(1);
                   }}
                   placeholder="Search reviews by name, location or text…"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-full border border-forest/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-amber/20 focus:border-amber transition-shadow"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-full border border-edge/15 bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-amber/20 focus:border-amber transition-shadow"
                 />
               </div>
 
@@ -357,8 +358,8 @@ export default function AdminReviews() {
                   onClick={() => setOpenMenu((m) => (m === 'filter' ? null : 'filter'))}
                   className={`px-4 py-2.5 rounded-full text-[13px] font-semibold transition-all duration-200 border flex items-center gap-1.5
                     ${sortBy !== 'default'
-                      ? 'bg-forest text-white border-forest shadow-sm'
-                      : 'bg-white text-ink-2 border-forest/15 hover:border-forest/40 hover:text-forest'
+                      ? 'bg-forest dark:bg-sage text-white border-edge shadow-sm'
+                      : 'bg-surface text-ink-2 border-edge/15 hover:border-edge/40 hover:text-heading'
                     }`}
                   aria-haspopup="listbox" aria-expanded={openMenu === 'filter'}
                 >
@@ -366,12 +367,12 @@ export default function AdminReviews() {
                   <span className="text-[10px]">▾</span>
                 </button>
                 {openMenu === 'filter' && (
-                  <div role="listbox" className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl2 border border-forest/12 shadow-lg py-1.5 max-h-64 overflow-y-auto">
+                  <div role="listbox" className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-surface rounded-xl2 border border-edge/12 shadow-lg py-1.5 max-h-64 overflow-y-auto">
                     {SORT_OPTIONS.map((opt) => (
                       <button key={opt.value} role="option" aria-selected={sortBy === opt.value}
                         onClick={() => { setSortBy(opt.value); setOpenMenu(null); setPage(1); }}
                         className={`w-full text-left px-4 py-2 text-[13px] transition-colors
-                          ${sortBy === opt.value ? 'text-forest font-bold bg-earth' : 'text-ink-2 hover:bg-earth'}`}>
+                          ${sortBy === opt.value ? 'text-heading font-bold bg-earth' : 'text-ink-2 hover:bg-earth'}`}>
                         {opt.label}
                       </button>
                     ))}
@@ -382,20 +383,20 @@ export default function AdminReviews() {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => exportTestimonialsAsJSON(filtered)}
-                  className="px-4 py-2.5 rounded-full text-[13px] font-semibold bg-white text-ink-2 border border-forest/15 hover:border-forest/40 hover:text-forest transition-all"
+                  className="px-4 py-2.5 rounded-full text-[13px] font-semibold bg-surface text-ink-2 border border-edge/15 hover:border-edge/40 hover:text-heading transition-all"
                 >
                   📤 Export (JSON)
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-4 py-2.5 rounded-full text-[13px] font-semibold bg-white text-ink-2 border border-forest/15 hover:border-forest/40 hover:text-forest transition-all"
+                  className="px-4 py-2.5 rounded-full text-[13px] font-semibold bg-surface text-ink-2 border border-edge/15 hover:border-edge/40 hover:text-heading transition-all"
                 >
                   📥 Import
                 </button>
                 <input ref={fileInputRef} type="file" accept="application/json" onChange={handleImportFile} className="hidden" />
                 <button
                   onClick={() => setResetConfirmOpen(true)}
-                  className="px-4 py-2.5 rounded-full text-[13px] font-semibold bg-white text-ink-2 border border-forest/15 hover:border-red-300 hover:text-red-600 transition-all"
+                  className="px-4 py-2.5 rounded-full text-[13px] font-semibold bg-surface text-ink-2 border border-edge/15 hover:border-red-300 hover:text-red-600 transition-all"
                 >
                   🗑️ Clear All
                 </button>
@@ -408,9 +409,9 @@ export default function AdminReviews() {
 
             {/* Review list */}
             {paginated.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-xl2 border border-forest/8">
+              <div className="text-center py-20 bg-surface rounded-xl2 border border-edge/8">
                 <p className="text-3xl mb-3">{activeFilter === 'pending' ? '🕓' : activeFilter === 'rejected' ? '❌' : '⭐'}</p>
-                <p className="text-forest font-serif text-lg mb-1">
+                <p className="text-heading font-serif text-lg mb-1">
                   {activeFilter === 'pending' ? 'No pending reviews' : activeFilter === 'rejected' ? 'No rejected reviews' : 'No reviews yet'}
                 </p>
                 <p className="text-ink-3 text-sm">
@@ -427,7 +428,7 @@ export default function AdminReviews() {
                         ? 'bg-amber/5 border-amber/30'
                         : t.status === 'rejected'
                           ? 'bg-red-50/60 border-red-200'
-                          : 'bg-white border-forest/8 hover:border-forest/20 hover:shadow-sm'
+                          : 'bg-surface border-edge/8 hover:border-edge/20 hover:shadow-sm'
                       }`}
                   >
                     <div className="w-12 h-12 rounded-full bg-earth flex items-center justify-center text-xl shrink-0">
@@ -436,18 +437,21 @@ export default function AdminReviews() {
 
                     <div className="flex-1 min-w-[180px]">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-serif text-forest text-[15px] leading-snug">{t.name}</p>
+                        <p className="font-serif text-heading text-[15px] leading-snug">{t.name}</p>
                         <StarRow rating={t.rating} />
                         {t.status === 'pending' && (
                           <span className="text-[10px] font-bold uppercase text-amber bg-amber/10 px-2 py-0.5 rounded-full">Pending</span>
                         )}
                         {t.status === 'rejected' && (
-                          <span className="text-[10px] font-bold uppercase text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Rejected</span>
+                          <span className="text-[10px] font-bold uppercase text-red-600 bg-red-100 dark:bg-red-500/20 dark:text-red-400 px-2 py-0.5 rounded-full">Rejected</span>
+                        )}
+                        {t.status !== 'pending' && t.status !== 'rejected' && (
+                          <span className="text-[10px] font-bold uppercase text-green-700 bg-green-100 dark:bg-green-500/20 dark:text-green-400 px-2 py-0.5 rounded-full">Active</span>
                         )}
                       </div>
                       <p className="text-[11px] text-ink-3 mt-0.5">{t.location}</p>
                       {t.phone && (
-                        <p className="text-[11px] text-forest font-semibold mt-1">📞 {t.phone}</p>
+                        <p className="text-[11px] text-heading font-semibold mt-1">📞 {t.phone}</p>
                       )}
                       <p className="text-[13px] text-ink-2 mt-1.5 leading-relaxed">{t.text}</p>
                     </div>
@@ -458,14 +462,14 @@ export default function AdminReviews() {
                           <button
                             onClick={() => handleApprove(t)}
                             disabled={busy}
-                            className="px-3.5 py-2 rounded-lg bg-forest text-white text-xs font-bold hover:bg-grove transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="px-3.5 py-2 rounded-lg bg-forest text-white text-xs font-bold hover:bg-grove dark:bg-sage dark:hover:bg-sage/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             ✅ Approve
                           </button>
                           <button
                             onClick={() => setRejectTarget(t)}
                             disabled={busy}
-                            className="px-3.5 py-2 rounded-lg bg-white border border-red-200 text-red-600 text-xs font-bold hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="px-3.5 py-2 rounded-lg bg-surface border border-red-200 text-red-600 text-xs font-bold hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             ❌ Reject
                           </button>
@@ -476,7 +480,7 @@ export default function AdminReviews() {
                           <button
                             onClick={() => handleRestore(t)}
                             disabled={busy}
-                            className="px-3.5 py-2 rounded-lg bg-white border border-forest/20 text-forest text-xs font-bold hover:bg-earth transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="px-3.5 py-2 rounded-lg bg-surface border border-edge/20 text-heading text-xs font-bold hover:bg-earth transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             ↩️ Restore
                           </button>
@@ -496,7 +500,7 @@ export default function AdminReviews() {
                             onClick={() => openEdit(t)}
                             disabled={busy}
                             aria-label={`Edit ${t.name}'s review`}
-                            className="w-9 h-9 rounded-lg flex items-center justify-center text-ink-2 hover:bg-earth hover:text-forest transition-colors text-base disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="w-9 h-9 rounded-lg flex items-center justify-center text-ink-2 hover:bg-earth hover:text-heading transition-colors text-base disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             ✏️
                           </button>
@@ -522,7 +526,7 @@ export default function AdminReviews() {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={pageSafe === 1}
-                  className="w-9 h-9 rounded-full text-[15px] font-bold border border-forest/20 text-ink-2 hover:border-forest hover:text-forest disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="w-9 h-9 rounded-full text-[15px] font-bold border border-edge/20 text-ink-2 hover:border-edge hover:text-heading disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   ‹
                 </button>
@@ -532,7 +536,7 @@ export default function AdminReviews() {
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={pageSafe === totalPages}
-                  className="w-9 h-9 rounded-full text-[15px] font-bold border border-forest/20 text-ink-2 hover:border-forest hover:text-forest disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="w-9 h-9 rounded-full text-[15px] font-bold border border-edge/20 text-ink-2 hover:border-edge hover:text-heading disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   ›
                 </button>
@@ -548,6 +552,7 @@ export default function AdminReviews() {
         initial={editingReview}
         onSave={handleSave}
         onClose={() => setFormOpen(false)}
+        isBusy={busy}
       />
 
       <ConfirmDialog

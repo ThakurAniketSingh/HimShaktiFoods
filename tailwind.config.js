@@ -1,18 +1,36 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
       colors: {
+        // ── Fixed brand colors — identical in light & dark mode ──
+        // These are used for solid chrome (Navbar/Footer/hero banners),
+        // buttons, and badges that are deliberately always-dark-green or
+        // always-amber regardless of theme, so they're plain hex values,
+        // not CSS-variable-driven.
         forest:  '#0b2909',
         grove:   '#1c5216',
         sage:    '#3a8032',
         amber:   { DEFAULT: '#cc7908', lt: '#efa030' },
         gold:    '#f5c842',
-        ink:     { DEFAULT: '#0c0b08', 2: '#3e3426', 3: '#907e6a' },
-        mist:    '#f9f8f5',
-        earth:   '#f1ebe0',
         wa:      { DEFAULT: '#25d366', dk: '#1aa34a' },
+
+        // ── Adaptive tokens — flip value when the <html> element has
+        // the "dark" class (see src/context/ThemeContext.jsx). Defined
+        // as CSS variables in index.css so changing them there is the
+        // ONLY place the two palettes live.
+        mist:    'rgb(var(--color-mist) / <alpha-value>)',
+        earth:   'rgb(var(--color-earth) / <alpha-value>)',
+        surface: 'rgb(var(--color-surface) / <alpha-value>)',
+        heading: 'rgb(var(--color-heading) / <alpha-value>)',
+        edge:    'rgb(var(--color-edge) / <alpha-value>)',
+        ink: {
+          DEFAULT: 'rgb(var(--color-ink) / <alpha-value>)',
+          2: 'rgb(var(--color-ink-2) / <alpha-value>)',
+          3: 'rgb(var(--color-ink-3) / <alpha-value>)',
+        },
       },
       fontFamily: {
         serif: ['"DM Serif Display"', 'Georgia', 'serif'],

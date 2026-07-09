@@ -52,14 +52,14 @@ export default function Contact() {
           {/* Contact details */}
           <div className="h-full flex flex-col justify-between">
             <div>
-              <h2 className="font-serif text-forest text-2xl mb-8">Get in Touch</h2>
+              <h2 className="font-serif text-heading text-2xl mb-8">Get in Touch</h2>
               <div className="flex flex-col gap-4">
                 {loading
                   ? Array.from({ length: 5 }).map((_, i) => <ContactDetailSkeleton key={i} />)
                   : DETAILS.map(({ icon, label, content }) => (
                       <div key={label}
-                        className="flex gap-4 bg-white rounded-xl2 p-5 border border-forest/8
-                          hover:border-forest/20 hover:shadow-sm transition-all duration-200">
+                        className="flex gap-4 bg-surface rounded-xl2 p-5 border border-edge/8
+                          hover:border-edge/20 hover:shadow-sm transition-all duration-200">
                         <div className="w-10 h-10 rounded-xl bg-amber/10 border border-amber/20
                           flex items-center justify-center text-xl shrink-0">
                           {icon}
@@ -93,7 +93,7 @@ export default function Contact() {
 
           {/* Leave a Review */}
           <div className="h-full flex flex-col">
-            <h2 className="font-serif text-forest text-2xl mb-8">Leave a Review</h2>
+            <h2 className="font-serif text-heading text-2xl mb-8">Leave a Review</h2>
             <div className="flex-1">
               <ReviewSubmitForm />
             </div>
@@ -104,9 +104,9 @@ export default function Contact() {
       {/* ── Map — full width, below ─────────────────────── */}
       <section className="wrap pb-16">
         <div className="text-center mb-6">
-          <h2 className="font-serif text-forest text-2xl">Find Us on the Map</h2>
+          <h2 className="font-serif text-heading text-2xl">Find Us on the Map</h2>
         </div>
-        <div className="rounded-xl2 overflow-hidden border border-forest/10 shadow-sm h-[255px] sm:h-[315px]">
+        <div className="rounded-xl2 overflow-hidden border border-edge/10 shadow-sm h-[255px] sm:h-[315px]">
           {loading ? (
             <Skeleton className="w-full h-full rounded-none" />
           ) : (

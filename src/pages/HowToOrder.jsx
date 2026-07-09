@@ -41,19 +41,19 @@ export default function HowToOrder() {
       <section className="wrap py-20">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {STEPS.map((s, i) => (
-            <div key={s.n} className="relative bg-white rounded-xl2 p-6 border border-forest/10
-              hover:shadow-md hover:border-forest/25 transition-all duration-200">
+            <div key={s.n} className="relative bg-surface rounded-xl2 p-6 border border-edge/10
+              hover:shadow-md hover:border-edge/25 transition-all duration-200">
               {/* Connector line */}
               {i < STEPS.length - 1 && (
                 <div className="hidden lg:block absolute top-[52px] left-[calc(100%)] w-6
-                  h-px bg-forest/15 z-10" />
+                  h-px bg-edge/15 z-10" />
               )}
               <div className="w-12 h-12 rounded-xl bg-amber/10 border border-amber/20
                 flex items-center justify-center text-2xl mb-4">
                 {s.icon}
               </div>
               <p className="text-[10px] font-bold text-amber/70 uppercase tracking-widest mb-2">{s.n}</p>
-              <h3 className="font-serif text-forest text-lg mb-2">{s.title}</h3>
+              <h3 className="font-serif text-heading text-lg mb-2">{s.title}</h3>
               <p className="text-sm text-ink-3 leading-relaxed">{s.body}</p>
             </div>
           ))}

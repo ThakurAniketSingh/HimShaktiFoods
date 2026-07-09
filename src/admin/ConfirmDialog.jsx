@@ -42,17 +42,17 @@ export default function ConfirmDialog({
         tabIndex={-1}
         onKeyDown={handleKeyDown}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-xl2 max-w-[400px] w-full p-6 sm:p-7 shadow-2xl animate-modal-in outline-none text-center"
+        className="bg-surface rounded-xl2 max-w-[400px] w-full p-6 sm:p-7 shadow-2xl animate-modal-in outline-none text-center"
       >
         <div className="w-12 h-12 rounded-full bg-red-50 border border-red-200 flex items-center justify-center text-2xl mx-auto mb-4">
           {tone === 'danger' ? '🗑️' : '❓'}
         </div>
-        <h3 className="font-serif text-forest text-xl mb-2">{title}</h3>
+        <h3 className="font-serif text-heading text-xl mb-2">{title}</h3>
         <p className="text-sm text-ink-3 leading-relaxed mb-6">{message}</p>
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 py-3 rounded-full text-sm font-semibold border border-forest/15 text-ink-2 hover:border-forest/40 hover:text-forest transition-colors"
+            className="flex-1 py-3 rounded-full text-sm font-semibold border border-edge/15 text-ink-2 hover:border-edge/40 hover:text-heading transition-colors"
           >
             Cancel
           </button>

@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import WhatsAppIcon from './WhatsAppIcon';
+import ThemeToggle from './ThemeToggle';
 import { useContactInfo } from '../context/ContactContext';
 
 // All nav links in one place — easy to update
@@ -89,6 +90,7 @@ export default function Navbar() {
 
           {/* Desktop WhatsApp CTA — skeleton on first load, real button once data is ready */}
           <div className="hidden lg:flex items-center gap-2.5">
+            <ThemeToggle />
             {loading ? (
               <div className="animate-pulse bg-white/20 rounded-full h-9 w-28" />
             ) : (
@@ -102,20 +104,25 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Hamburger button — only visible on mobile/tablet */}
-          <button onClick={() => setOpen(!open)}
-            aria-label={open ? 'Close menu' : 'Open menu'}
-            aria-expanded={open}
-            className="lg:hidden w-10 h-10 flex flex-col items-center justify-center gap-[5px]
-            rounded-xl hover:bg-white/10 transition-colors">
-            {/* Three lines animate into an X when menu is open */}
-            <span className={`block w-[22px] h-[2px] bg-white rounded-full origin-center
-              transition-all duration-300 ${open ? 'rotate-45 translate-y-[7px]' : ''}`} />
-            <span className={`block w-[22px] h-[2px] bg-white rounded-full
-              transition-all duration-300 ${open ? 'opacity-0 scale-x-0' : ''}`} />
-            <span className={`block w-[22px] h-[2px] bg-white rounded-full origin-center
-              transition-all duration-300 ${open ? '-rotate-45 -translate-y-[7px]' : ''}`} />
-          </button>
+          {/* Mobile: theme toggle + hamburger, both reachable without opening the menu */}
+          <div className="lg:hidden flex items-center gap-1">
+            <ThemeToggle />
+            <button onClick={() => setOpen(!open)}
+              aria-label={open ? 'Close menu' : 'Open menu'}
+              aria-expanded={open}
+              className="w-10 h-10 flex flex-col items-center justify-center gap-[5px]
+              rounded-xl hover:bg-white/10 transition-colors">
+              {/* Three lines animate into an X when menu is open. Always
+                  white — this sits on the navbar's permanently dark-green
+                  background in both themes, never on an adaptive surface. */}
+              <span className={`block w-[22px] h-[2px] bg-white rounded-full origin-center
+                transition-all duration-300 ${open ? 'rotate-45 translate-y-[7px]' : ''}`} />
+              <span className={`block w-[22px] h-[2px] bg-white rounded-full
+                transition-all duration-300 ${open ? 'opacity-0 scale-x-0' : ''}`} />
+              <span className={`block w-[22px] h-[2px] bg-white rounded-full origin-center
+                transition-all duration-300 ${open ? '-rotate-45 -translate-y-[7px]' : ''}`} />
+            </button>
+          </div>
         </div>
 
         {/* Mobile slide-down menu — max-h trick gives smooth open/close animation */}

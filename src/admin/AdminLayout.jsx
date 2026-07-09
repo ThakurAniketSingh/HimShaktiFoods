@@ -5,6 +5,7 @@
 // and the Contact page.
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { logout } from './adminAuth';
+import ThemeToggle from '../components/ThemeToggle';
 
 const TABS = [
   { to: '/admin', label: '🛒 Products' },
@@ -38,6 +39,7 @@ export default function AdminLayout({ children }) {
           </Link>
 
           <div className="flex items-center gap-1.5 sm:gap-2.5">
+            <ThemeToggle />
             <Link
               to="/"
               target="_blank"
@@ -57,7 +59,7 @@ export default function AdminLayout({ children }) {
       </header>
 
       {/* Section tabs — switch between Products, Reviews and Contact Page */}
-      <nav className="bg-white border-b border-forest/10 sticky top-[64px] z-30">
+      <nav className="bg-surface border-b border-edge/10 sticky top-[64px] z-30">
         <div className="wrap flex flex-wrap justify-center items-center gap-2 py-2.5">
           {TABS.map((tab) => (
             <NavLink
@@ -66,7 +68,7 @@ export default function AdminLayout({ children }) {
               end
               className={({ isActive }) =>
                 `px-4 py-2 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all duration-200 border
-                ${isActive ? 'bg-forest text-white border-forest' : 'bg-white text-ink-2 border-forest/15 hover:border-forest/40 hover:text-forest'}`
+                ${isActive ? 'bg-forest dark:bg-sage text-white border-edge' : 'bg-surface text-ink-2 border-edge/15 hover:border-edge/40 hover:text-heading'}`
               }
             >
               {tab.label}

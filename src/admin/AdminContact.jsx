@@ -10,7 +10,7 @@ import { useToast } from './ToastContext';
 import { Skeleton, FormFieldSkeleton, ContactDetailSkeleton } from '../components/Skeleton';
 
 function inputClass() {
-  return `w-full px-4 py-2.5 rounded-xl border border-forest/15 text-sm text-ink bg-mist
+  return `w-full px-4 py-2.5 rounded-xl border border-edge/15 text-sm text-ink bg-mist
     focus:outline-none focus:ring-2 focus:ring-amber/20 focus:border-amber transition-shadow`;
 }
 
@@ -67,7 +67,7 @@ export default function AdminContact() {
       <div className="wrap py-8 sm:py-10">
         <div className="mb-7">
           <div className="eyebrow mb-2">Admin Panel</div>
-          <h1 className="font-serif text-forest text-[1.8rem] sm:text-[2.1rem]">Manage Contact Page</h1>
+          <h1 className="font-serif text-heading text-[1.8rem] sm:text-[2.1rem]">Manage Contact Page</h1>
           <p className="text-ink-3 text-sm mt-1">
             Everything here shows up on the public <strong>Contact &amp; Location</strong> page immediately after saving.
           </p>
@@ -186,7 +186,7 @@ export default function AdminContact() {
                 disabled={saving}
                 className="py-3 rounded-full text-sm font-bold text-white bg-amber hover:bg-amber-lt transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
               >
-                {saving ? 'Saving…' : '💾 Save Changes'}
+                {saving ? '⏳ Saving…' : '💾 Save Changes'}
               </button>
             </form>
 
@@ -196,7 +196,7 @@ export default function AdminContact() {
 
               <div className="flex flex-col gap-3">
                 {previewDetails.map(({ icon, label, content }) => (
-                  <div key={label} className="flex gap-3 bg-white rounded-xl2 p-4 border border-forest/8">
+                  <div key={label} className="flex gap-3 bg-surface rounded-xl2 p-4 border border-edge/8">
                     <div className="w-9 h-9 rounded-xl bg-amber/10 border border-amber/20 flex items-center justify-center text-lg shrink-0">
                       {icon}
                     </div>
@@ -209,7 +209,7 @@ export default function AdminContact() {
               </div>
 
               {form.mapEmbedUrl && (
-                <div className="rounded-xl2 overflow-hidden border border-forest/10 shadow-sm aspect-[4/3]">
+                <div className="rounded-xl2 overflow-hidden border border-edge/10 shadow-sm aspect-[4/3]">
                   <iframe
                     src={form.mapEmbedUrl}
                     width="100%"

@@ -14,7 +14,7 @@ const EMPTY_FORM = {
 function inputClass(error) {
   return `w-full px-4 py-2.5 rounded-xl border text-sm text-ink bg-mist
     focus:outline-none focus:ring-2 focus:ring-amber/20 transition-shadow
-    ${error ? 'border-red-400' : 'border-forest/15 focus:border-amber'}`;
+    ${error ? 'border-red-400' : 'border-edge/15 focus:border-amber'}`;
 }
 
 function Field({ label, hint, error, required, children }) {
@@ -42,7 +42,7 @@ function StarPicker({ value, onChange }) {
           aria-label={`${n} star${n === 1 ? '' : 's'}`}
           className="text-2xl leading-none transition-transform hover:scale-110"
         >
-          <span className={n <= value ? 'text-amber' : 'text-forest/15'}>★</span>
+          <span className={n <= value ? 'text-amber' : 'text-heading/15'}>★</span>
         </button>
       ))}
       <span className="text-xs text-ink-3 ml-2">{value} / 5</span>
@@ -53,17 +53,17 @@ function StarPicker({ value, onChange }) {
 /* Mirrors Home.jsx's TestiCard markup exactly, for the live preview. */
 function PreviewCard({ t }) {
   return (
-    <div className="bg-white rounded-xl2 p-6 flex flex-col border border-forest/8">
-      <div className="text-4xl font-serif text-forest/10 leading-none mb-1 select-none">"</div>
+    <div className="bg-surface rounded-xl2 p-6 flex flex-col border border-edge/8">
+      <div className="text-4xl font-serif text-heading/10 leading-none mb-1 select-none">"</div>
       <div className="text-amber text-base mb-3">
         {'★'.repeat(t.rating)}
         {'☆'.repeat(5 - t.rating)}
       </div>
       <p className="text-sm text-ink-2 leading-relaxed flex-1 italic">{t.text || 'The review text will appear here.'}</p>
-      <div className="flex items-center gap-3 mt-5 pt-4 border-t border-forest/6">
+      <div className="flex items-center gap-3 mt-5 pt-4 border-t border-edge/6">
         <div className="w-9 h-9 rounded-full bg-earth flex items-center justify-center text-lg shrink-0">{t.avatar}</div>
         <div className="leading-none">
-          <p className="text-[13px] font-bold text-forest">{t.name || 'Customer Name'}</p>
+          <p className="text-[13px] font-bold text-heading">{t.name || 'Customer Name'}</p>
           <p className="text-[11px] text-ink-3 mt-0.5">{t.location || 'City'}</p>
         </div>
       </div>
@@ -71,7 +71,7 @@ function PreviewCard({ t }) {
   );
 }
 
-export default function ReviewFormModal({ open, mode, initial, onSave, onClose }) {
+export default function ReviewFormModal({ open, mode, initial, onSave, onClose, isBusy }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const containerRef = useRef(null);
@@ -131,19 +131,19 @@ export default function ReviewFormModal({ open, mode, initial, onSave, onClose }
         tabIndex={-1}
         onKeyDown={handleKeyDown}
         onClick={(e) => e.stopPropagation()}
-        className="relative bg-white rounded-xl2 w-full max-w-[820px] max-h-[92vh] overflow-y-auto shadow-2xl animate-modal-in outline-none"
+        className="relative bg-surface rounded-xl2 w-full max-w-[820px] max-h-[92vh] overflow-y-auto shadow-2xl animate-modal-in outline-none"
       >
         <button
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-earth hover:bg-forest/10 flex items-center justify-center text-ink-3 hover:text-forest transition-colors text-lg leading-none"
+          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-earth hover:bg-heading/10 flex items-center justify-center text-ink-3 hover:text-heading transition-colors text-lg leading-none"
         >
           ✕
         </button>
 
         <div className="p-5 sm:p-8">
           <div className="eyebrow mb-2">{mode === 'edit' ? 'Edit Review' : 'New Review'}</div>
-          <h2 className="font-serif text-forest text-2xl mb-6">
+          <h2 className="font-serif text-heading text-2xl mb-6">
             {mode === 'edit' ? `Edit ${initial?.name}'s review` : 'Add a customer review'}
           </h2>
 
@@ -182,19 +182,21 @@ export default function ReviewFormModal({ open, mode, initial, onSave, onClose }
                 />
               </Field>
 
-              <div className="flex gap-3 pt-2 sticky bottom-0 bg-white pb-1">
+              <div className="flex gap-3 pt-2 sticky bottom-0 bg-surface pb-1">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-3 rounded-full text-sm font-semibold border border-forest/15 text-ink-2 hover:border-forest/40 hover:text-forest transition-colors"
+                  disabled={isBusy}
+                  className="flex-1 py-3 rounded-full text-sm font-semibold border border-edge/15 text-ink-2 hover:border-edge/40 hover:text-heading transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 rounded-full text-sm font-bold text-white bg-amber hover:bg-amber-lt transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber/30"
+                  disabled={isBusy}
+                  className="flex-1 py-3 rounded-full text-sm font-bold text-white bg-amber hover:bg-amber-lt transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber/30 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
                 >
-                  {mode === 'edit' ? 'Save Changes' : 'Add Review'}
+                  {isBusy ? '⏳ Saving…' : mode === 'edit' ? 'Save Changes' : 'Add Review'}
                 </button>
               </div>
             </form>

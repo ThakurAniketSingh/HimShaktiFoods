@@ -2,6 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Theme tokens ──────────────────────────────────────
+   Light values = the site's original, unchanged look (this stays the
+   DEFAULT — no .dark class present). Dark values apply the moment
+   <html> gets the "dark" class (see src/context/ThemeContext.jsx).
+   Values are R G B triplets (no commas) so Tailwind's `<alpha-value>`
+   opacity modifiers (e.g. bg-surface/60) work correctly.
+   Fixed brand colors (forest, grove, sage, amber, gold, wa) are NOT
+   listed here — they stay plain hex in tailwind.config.js and never
+   change with theme, since they're used for solid chrome (Navbar,
+   Footer, buttons) that should always look the same. */
+:root {
+  --color-mist:    249 248 245; /* page background */
+  --color-earth:   241 235 224; /* secondary background / highlight zones */
+  --color-surface: 255 255 255; /* elevated card / modal background */
+  --color-heading: 11 41 9;     /* brand-green heading & icon text on cards */
+  --color-edge:    11 41 9;     /* hairline border tint on cards */
+  --color-ink:     12 11 8;     /* primary body text */
+  --color-ink-2:   62 52 38;    /* secondary body text */
+  --color-ink-3:   144 126 106; /* tertiary / muted text */
+}
+
+.dark {
+  --color-mist:    20 23 15;    /* deep warm near-black canvas */
+  --color-earth:   27 31 20;    /* slightly lighter secondary background */
+  --color-surface: 36 41 27;    /* lightest of the three — elevated cards */
+  --color-heading: 111 191 99;  /* bright, legible green for headings/icons */
+  --color-edge:    240 236 224; /* light hairline tint (used at low opacity) */
+  --color-ink:     240 236 224; /* warm off-white primary text */
+  --color-ink-2:   201 192 168; /* dimmer secondary text */
+  --color-ink-3:   138 130 112; /* muted tertiary text */
+}
+
+/* Hide browsers' own built-in "reveal password" icons — some browsers
+   (notably Microsoft Edge) draw their own eye icon inside every
+   type="password" input. Without this, that native icon sits right next
+   to our custom show/hide button, showing two overlapping eye icons. */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+input::-webkit-credentials-auto-fill-button,
+input::-webkit-strong-password-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
 /* ── Global resets & base ─────────────────────────────── */
 *,
 *::before,
@@ -16,13 +65,14 @@ html {
 }
 body {
   font-family: "DM Sans", system-ui, sans-serif;
-  background-color: #f9f8f5;
-  color: #0c0b08;
+  background-color: rgb(var(--color-mist));
+  color: rgb(var(--color-ink));
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Prevent horizontal scroll from overflowing content */
   overflow-x: hidden;
+  transition: background-color 0.2s ease;
 }
 iframe {
   display: block;
@@ -99,7 +149,8 @@ iframe {
   padding-inline: clamp(1.25rem, 5vw, 3rem);
 }
 
-/* Eyebrow label (with decorative lines) */
+/* Eyebrow label (with decorative lines) — amber is a fixed brand
+   accent, reads fine on both light and dark canvases unchanged. */
 .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -139,18 +190,24 @@ iframe {
   width: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1ebe0;
+  background: rgb(var(--color-earth));
 }
 ::-webkit-scrollbar-thumb {
   background: #3a8032;
   border-radius: 99px;
 }
 
-/* Skeleton loading placeholder — a soft moving shimmer in the site's
-   cream tones (not a generic gray), used while real data is still being
-   fetched from the API. Always pair with an explicit rounded-* class. */
+/* Skeleton loading placeholder — a soft moving shimmer that follows the
+   same adaptive earth/surface tones as the rest of the page, so loading
+   placeholders never flash a light-mode color while dark mode is active.
+   Always pair with an explicit rounded-* class. */
 .skeleton {
-  background-image: linear-gradient(90deg, #f1ebe0 25%, #e7ddc9 37%, #f1ebe0 63%);
+  background-image: linear-gradient(
+    90deg,
+    rgb(var(--color-earth)) 25%,
+    rgb(var(--color-surface)) 37%,
+    rgb(var(--color-earth)) 63%
+  );
   background-size: 400% 100%;
   animation: shimmer 1.6s ease-in-out infinite;
 }
@@ -158,6 +215,26 @@ iframe {
   .skeleton {
     animation: none;
     background-image: none;
-    background-color: #f1ebe0;
+    background-color: rgb(var(--color-earth));
   }
 }
+
+/* ── Dark-mode overrides for hardcoded red-* error/danger states ──
+   These utility classes (from Tailwind's built-in red palette, not the
+   site's custom tokens) are used consistently for ONE purpose throughout
+   the app — validation errors, delete-confirmation dialogs, and "Rejected"
+   badges. Rather than editing every individual usage, retargeting the
+   generated utility classes here under a `.dark` ancestor covers all of
+   them at once. */
+.dark .bg-red-50    { background-color: rgb(127 29 29 / 0.18); }
+.dark .bg-red-50\/60 { background-color: rgb(127 29 29 / 0.14); }
+.dark .bg-red-100   { background-color: rgb(127 29 29 / 0.24); }
+.dark .bg-red-500   { background-color: rgb(220 38 38); }
+.dark .bg-red-600   { background-color: rgb(220 38 38); }
+.dark .bg-red-700   { background-color: rgb(185 28 28); }
+.dark .text-red-500 { color: rgb(248 113 113); }
+.dark .text-red-600 { color: rgb(248 113 113); }
+.dark .text-red-700 { color: rgb(252 165 165); }
+.dark .border-red-200 { border-color: rgb(127 29 29 / 0.5); }
+.dark .border-red-300 { border-color: rgb(127 29 29 / 0.6); }
+.dark .border-red-400 { border-color: rgb(220 38 38 / 0.6); }

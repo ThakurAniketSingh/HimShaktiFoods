@@ -19,8 +19,28 @@ function MtnWatermark() {
   );
 }
 
+function EyeIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" aria-hidden="true">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+function EyeOffIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" aria-hidden="true">
+      <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M10.6 5.2A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a15.6 15.6 0 0 1-3.4 4.3M6.6 6.6C4 8.3 2 12 2 12s3.5 7 10 7a10 10 0 0 0 3.4-.6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9.9 10a3 3 0 0 0 4.2 4.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function AdminLogin() {
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -69,9 +89,9 @@ export default function AdminLogin() {
           </div>
         </Link>
 
-        <div className="bg-white rounded-xl2 p-8 shadow-2xl">
+        <div className="bg-surface rounded-xl2 p-8 shadow-2xl">
           <div className="eyebrow justify-center mb-3">Admin Panel</div>
-          <h1 className="font-serif text-forest text-2xl text-center mb-2">Welcome back</h1>
+          <h1 className="font-serif text-heading text-2xl text-center mb-2">Welcome back</h1>
           <p className="text-ink-3 text-sm text-center mb-7">Sign in to manage your product catalog.</p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -79,21 +99,33 @@ export default function AdminLogin() {
               <label htmlFor="password" className="block text-[11px] font-bold text-ink-2 uppercase tracking-widest mb-2">
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                autoFocus
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError('');
-                }}
-                placeholder="Enter admin password"
-                className={`w-full px-4 py-3 rounded-xl border text-sm text-ink bg-mist
-                  focus:outline-none focus:ring-2 focus:ring-amber/30 transition-shadow
-                  ${error ? 'border-red-400' : 'border-forest/15 focus:border-amber'}`}
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoFocus
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError('');
+                  }}
+                  placeholder="Enter admin password"
+                  className={`w-full pl-4 pr-11 py-3 rounded-xl border text-sm text-ink bg-mist
+                    focus:outline-none focus:ring-2 focus:ring-amber/30 transition-shadow
+                    ${error ? 'border-red-400' : 'border-edge/15 focus:border-amber'}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  tabIndex={-1}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center
+                    rounded-lg text-ink-3 hover:text-heading hover:bg-heading/10 transition-colors"
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
               {error && <p className="text-red-600 text-xs mt-2 font-medium">⚠️ {error}</p>}
             </div>
 
@@ -104,7 +136,7 @@ export default function AdminLogin() {
                 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber/30
                 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0 text-sm mt-1"
             >
-              {loading ? 'Signing in…' : 'Sign In'}
+              {loading ? '⏳ Signing in…' : 'Sign In'}
             </button>
           </form>
         </div>

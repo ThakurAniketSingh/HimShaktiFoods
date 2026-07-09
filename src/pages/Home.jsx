@@ -82,7 +82,7 @@ function CategoryItem({ emoji, label, to, posClass, animClass }) {
 function NumBubble({ value, label }) {
   return (
     <div className="flex flex-col items-center text-center">
-      <span className="font-serif text-3xl sm:text-4xl text-forest">
+      <span className="font-serif text-3xl sm:text-4xl text-heading">
         {value}
       </span>
       <span className="text-xs font-semibold text-ink-3 mt-1 tracking-wide">
@@ -96,12 +96,12 @@ function NumBubble({ value, label }) {
 function StoryCard({ icon, title, body }) {
   return (
     <div
-      className="bg-white rounded-xl2 p-5 flex gap-4 border border-forest/8
-      hover:shadow-md transition-shadow duration-200 hover:border-forest/20"
+      className="bg-surface rounded-xl2 p-5 flex gap-4 border border-edge/8
+      hover:shadow-md transition-shadow duration-200 hover:border-edge/20"
     >
       <span className="text-3xl shrink-0">{icon}</span>
       <div>
-        <p className="font-serif text-forest text-[1.05rem] mb-1.5">{title}</p>
+        <p className="font-serif text-heading text-[1.05rem] mb-1.5">{title}</p>
         <p className="text-sm text-ink-3 leading-relaxed">{body}</p>
       </div>
     </div>
@@ -113,10 +113,10 @@ function TestiCard({ t }) {
   const rating = Number(t.rating) || 0;
   return (
     <div
-      className="bg-white rounded-xl2 p-6 flex flex-col border border-forest/8
-      hover:shadow-md transition-shadow duration-200 hover:border-forest/20"
+      className="bg-surface rounded-xl2 p-6 flex flex-col border border-edge/8
+      hover:shadow-md transition-shadow duration-200 hover:border-edge/20"
     >
-      <div className="text-4xl font-serif text-forest/10 leading-none mb-1 select-none">
+      <div className="text-4xl font-serif text-heading/10 leading-none mb-1 select-none">
         "
       </div>
       <div className="text-amber text-base mb-3">
@@ -126,12 +126,12 @@ function TestiCard({ t }) {
       <p className="text-sm text-ink-2 leading-relaxed flex-1 italic">
         {t.text}
       </p>
-      <div className="flex items-center gap-3 mt-5 pt-4 border-t border-forest/6">
+      <div className="flex items-center gap-3 mt-5 pt-4 border-t border-edge/6">
         <div className="w-9 h-9 rounded-full bg-earth flex items-center justify-center text-lg shrink-0">
           {t.avatar}
         </div>
         <div className="leading-none">
-          <p className="text-[13px] font-bold text-forest">{t.name}</p>
+          <p className="text-[13px] font-bold text-heading">{t.name}</p>
           <p className="text-[11px] text-ink-3 mt-0.5">{t.location}</p>
         </div>
       </div>
@@ -333,11 +333,11 @@ export default function Home() {
       </section>
 
       {/* ── NUMBERS STRIP ────────────────────────────── */}
-      <section className="bg-mist border-b border-forest/8 py-10">
+      <section className="bg-mist border-b border-edge/8 py-10">
         <div className="wrap">
           <div
             className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8
-            divide-x-0 sm:divide-x divide-forest/10"
+            divide-x-0 sm:divide-x divide-edge/10"
           >
             <NumBubble value="100%" label="Natural" />
             <NumBubble value="Zero" label="Preservatives" />
@@ -352,7 +352,7 @@ export default function Home() {
         <div className="wrap">
           <div className="text-center mb-14">
             <div className="eyebrow justify-center mb-3">Our Story</div>
-            <h2 className="font-serif text-[clamp(1.9rem,3.5vw,2.7rem)] text-forest max-w-[500px] mx-auto leading-snug">
+            <h2 className="font-serif text-[clamp(1.9rem,3.5vw,2.7rem)] text-heading max-w-[500px] mx-auto leading-snug">
               From Mountain Villages
               <br />
               to Your Table
@@ -410,7 +410,7 @@ export default function Home() {
           <div className="wrap">
             <div className="text-center mb-12">
               <div className="eyebrow justify-center mb-3">Featured Products</div>
-              <h2 className="font-serif text-[clamp(1.9rem,3.5vw,2.7rem)] text-forest mb-3">
+              <h2 className="font-serif text-[clamp(1.9rem,3.5vw,2.7rem)] text-heading mb-3">
                 Taste the Himalayas
               </h2>
               <p className="text-ink-3 text-sm max-w-sm mx-auto">
@@ -426,7 +426,7 @@ export default function Home() {
             <div className="text-center">
               <Link
                 to="/products"
-                className="inline-flex items-center gap-2 bg-forest hover:bg-grove text-white
+                className="inline-flex items-center gap-2 bg-forest hover:bg-grove dark:bg-sage dark:hover:bg-sage/80 text-white
                 font-bold px-8 py-4 rounded-full transition-all duration-200
                 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-forest/20 text-sm"
               >
@@ -443,7 +443,7 @@ export default function Home() {
           <div className="wrap">
             <div className="text-center mb-12">
               <div className="eyebrow justify-center mb-3">What People Say</div>
-              <h2 className="font-serif text-[clamp(1.9rem,3.5vw,2.7rem)] text-forest">
+              <h2 className="font-serif text-[clamp(1.9rem,3.5vw,2.7rem)] text-heading">
                 Customers Love HimShakti
               </h2>
             </div>

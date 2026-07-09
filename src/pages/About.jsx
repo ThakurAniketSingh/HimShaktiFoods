@@ -78,11 +78,11 @@ export default function About() {
           <div className="flex flex-col gap-4">
             {CARDS.map(c => (
               <div key={c.title}
-                className="bg-white rounded-xl2 p-5 flex gap-4 border border-forest/8
-                  hover:shadow-md hover:border-forest/20 transition-all duration-200">
+                className="bg-surface rounded-xl2 p-5 flex gap-4 border border-edge/8
+                  hover:shadow-md hover:border-edge/20 transition-all duration-200">
                 <span className="text-3xl shrink-0">{c.icon}</span>
                 <div>
-                  <p className="font-serif text-forest text-[1.05rem] mb-1.5">{c.title}</p>
+                  <p className="font-serif text-heading text-[1.05rem] mb-1.5">{c.title}</p>
                   <p className="text-sm text-ink-3 leading-relaxed">{c.body}</p>
                 </div>
               </div>
@@ -92,7 +92,7 @@ export default function About() {
       </section>
 
       {/* ── Stats strip ──────────────────────────────── */}
-      <section className="bg-earth border-y border-forest/10 py-12">
+      <section className="bg-earth border-y border-edge/10 py-12">
         <div className="wrap">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-7">
             {VALUES.map(v => (
@@ -108,7 +108,7 @@ export default function About() {
       {/* ── CTA ──────────────────────────────────────── */}
       <div className="py-16 text-center bg-mist">
         <Link to="/products"
-          className="inline-flex items-center gap-2 bg-forest hover:bg-grove text-white
+          className="inline-flex items-center gap-2 bg-forest hover:bg-grove dark:bg-sage dark:hover:bg-sage/80 text-white
           font-bold px-8 py-4 rounded-full transition-all duration-200
           hover:-translate-y-0.5 hover:shadow-xl hover:shadow-forest/20 text-sm">
           Explore Our Products →

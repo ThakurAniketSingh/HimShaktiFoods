@@ -19,8 +19,30 @@ import ReactMarkdown from 'react-markdown';
 import { api } from '../admin/apiClient';
 import { useContactInfo } from '../context/ContactContext';
 
+let replyAudioCtx = null;
+function playReplySound() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    if (!replyAudioCtx) replyAudioCtx = new Ctx();
+    if (replyAudioCtx.state === 'suspended') replyAudioCtx.resume();
+    const t = replyAudioCtx.currentTime;
+    const osc = replyAudioCtx.createOscillator();
+    const gain = replyAudioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(740, t);
+    osc.frequency.exponentialRampToValueAtTime(1180, t + 0.07);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.1, t + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    osc.connect(gain);
+    gain.connect(replyAudioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.22);
+  } catch {}
+}
+
 // Shown immediately when the panel first opens — a real UI message, not
-// something the model actually said, so it's excluded from what gets
 // sent back to /api/chat (see the `id !== GREETING.id` filter below).
 const GREETING = {
   id: 'greeting',
@@ -149,6 +171,7 @@ export default function ChatWidget() {
 
       const data = await api.sendChatMessage(payload);
       setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: 'assistant', content: data?.reply || '' }]);
+      playReplySound();
       // The reply arrived while the panel was closed (e.g. the person
       // asked something, then closed the chat while waiting) — flag it.
       if (!openRef.current) setHasUnread(true);
@@ -199,8 +222,8 @@ export default function ChatWidget() {
           aria-label="HimShakti chat assistant"
           className="fixed z-50 bottom-4 right-4 left-4 h-[min(70vh,520px)]
             sm:bottom-6 sm:left-auto sm:right-6 sm:w-[368px]
-            bg-white rounded-xl2 shadow-2xl
-            border border-forest/10 flex flex-col overflow-hidden animate-modal-in"
+            bg-surface rounded-xl2 shadow-2xl
+            border border-edge/10 flex flex-col overflow-hidden animate-modal-in"
         >
           {/* Header */}
           <div className="bg-forest px-5 py-4 flex items-center justify-between shrink-0">
@@ -225,10 +248,10 @@ export default function ChatWidget() {
                   className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap break-words
                     ${
                       m.role === 'user'
-                        ? 'bg-forest text-white rounded-br-md'
+                        ? 'bg-forest dark:bg-sage text-white rounded-br-md'
                         : m.isError
                         ? 'bg-red-50 text-red-700 border border-red-200 rounded-bl-md'
-                        : 'bg-white text-ink border border-forest/8 rounded-bl-md'
+                        : 'bg-surface text-ink border border-edge/8 rounded-bl-md'
                     }`}
                 >
                   <ReactMarkdown
@@ -239,7 +262,7 @@ export default function ChatWidget() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className={`font-bold underline underline-offset-2 ${
-                            m.role === 'user' ? 'text-white' : 'text-forest hover:text-wa-dk'
+                            m.role === 'user' ? 'text-white' : 'text-heading hover:text-wa-dk'
                           }`}
                         />
                       ),
@@ -262,9 +285,33 @@ export default function ChatWidget() {
                 </div>
               </div>
             ))}
+            
+            {messages.length === 1 && messages[0].id === 'greeting' && !sending && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {[
+                  { label: '🛒 Show Products', text: 'Show all products' },
+                  { label: '🔥 What\'s on sale?', text: 'What products are on sale?' },
+                  { label: '💰 How to order?', text: 'How do I place an order?' },
+                  { label: '🚚 Delivery info', text: 'How long does delivery take?' },
+                  { label: '❌ Cancel products', text: 'I want to cancel my order/products' },
+                  { label: '📞 Contact details', text: 'What are your contact details?' },
+                ].map((chip) => (
+                  <button
+                    key={chip.label}
+                    onClick={() => handleSend(chip.text)}
+                    className="text-[11.5px] font-medium px-3 py-1.5 rounded-full
+                      bg-amber/10 text-amber hover:bg-amber/20 border border-amber/20
+                      transition-colors duration-150 whitespace-nowrap"
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            
             {sending && (
               <div className="flex justify-start">
-                <div className="bg-white border border-forest/8 rounded-2xl rounded-bl-md">
+                <div className="bg-surface border border-edge/8 rounded-2xl rounded-bl-md">
                   <TypingDots />
                 </div>
               </div>
@@ -272,7 +319,7 @@ export default function ChatWidget() {
           </div>
 
           {/* Input row */}
-          <div className="border-t border-forest/8 bg-white p-3 flex items-end gap-2 shrink-0 animate-fade-in">
+          <div className="border-t border-edge/8 bg-surface p-3 flex items-end gap-2 shrink-0 animate-fade-in">
             <textarea
               ref={inputRef}
               rows={1}
@@ -281,7 +328,7 @@ export default function ChatWidget() {
               onKeyDown={handleKeyDown}
               placeholder="Ask about products, orders, delivery…"
               maxLength={500}
-              className="flex-1 resize-none max-h-24 px-3.5 py-2.5 rounded-xl bg-mist border border-forest/12
+              className="flex-1 resize-none max-h-24 px-3.5 py-2.5 rounded-xl bg-mist border border-edge/12
                 text-[13.5px] text-ink placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-amber/25 focus:border-amber"
             />
             <button

@@ -29,6 +29,7 @@ const EMPTY_FORM = {
   weight: '',
   price: '',
   onSale: false,
+  outOfStock: false,
   shelfLife: '',
   image: '',
   bg: `linear-gradient(145deg, ${GRADIENT_PRESETS[0][0]}, ${GRADIENT_PRESETS[0][1]})`,
@@ -43,7 +44,7 @@ function gradientToColors(bg) {
 function inputClass(error) {
   return `w-full px-4 py-2.5 rounded-xl border text-sm text-ink bg-mist
     focus:outline-none focus:ring-2 focus:ring-amber/20 transition-shadow
-    ${error ? 'border-red-400' : 'border-forest/15 focus:border-amber'}`;
+    ${error ? 'border-red-400' : 'border-edge/15 focus:border-amber'}`;
 }
 
 function Field({ label, hint, error, required, children }) {
@@ -81,11 +82,11 @@ function IngredientInput({ value, onChange }) {
   };
 
   return (
-    <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl border border-forest/15 bg-mist focus-within:border-amber focus-within:ring-2 focus-within:ring-amber/20 transition-shadow">
+    <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl border border-edge/15 bg-mist focus-within:border-amber focus-within:ring-2 focus-within:ring-amber/20 transition-shadow">
       {value.map((tag) => (
         <span
           key={tag}
-          className="flex items-center gap-1 text-[12px] bg-earth text-ink-2 px-2.5 py-1 rounded-full border border-forest/8"
+          className="flex items-center gap-1 text-[12px] bg-earth text-ink-2 px-2.5 py-1 rounded-full border border-edge/8"
         >
           {tag}
           <button
@@ -110,7 +111,7 @@ function IngredientInput({ value, onChange }) {
   );
 }
 
-export default function ProductFormModal({ open, mode, initial, categories, onSave, onClose }) {
+export default function ProductFormModal({ open, mode, initial, categories, onSave, onClose, isBusy }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [categoryChoice, setCategoryChoice] = useState('');
@@ -137,6 +138,7 @@ export default function ProductFormModal({ open, mode, initial, categories, onSa
         weight: initial.weight ?? '',
         price: initial.price ?? '',
         onSale: initial.onSale ?? false,
+        outOfStock: initial.outOfStock ?? false,
         shelfLife: initial.shelfLife ?? '',
         image: initial.image ?? '',
         bg: initial.bg ?? EMPTY_FORM.bg,
@@ -251,6 +253,7 @@ export default function ProductFormModal({ open, mode, initial, categories, onSa
       category: finalCategory.toLowerCase(),
       price: Number(form.price),
       onSale: Boolean(form.onSale),
+      outOfStock: Boolean(form.outOfStock),
       image: form.image.trim() || '/images/products.webp',
     });
   };
@@ -267,6 +270,7 @@ export default function ProductFormModal({ open, mode, initial, categories, onSa
     weight: form.weight || '—',
     price: form.price || 0,
     onSale: form.onSale,
+    outOfStock: form.outOfStock,
     shelfLife: form.shelfLife,
     image: form.image || '/images/products.webp',
     bg: form.bg,
@@ -287,19 +291,19 @@ export default function ProductFormModal({ open, mode, initial, categories, onSa
         tabIndex={-1}
         onKeyDown={handleKeyDown}
         onClick={(e) => e.stopPropagation()}
-        className="relative bg-white rounded-xl2 w-full max-w-[980px] max-h-[92vh] overflow-y-auto shadow-2xl animate-modal-in outline-none"
+        className="relative bg-surface rounded-xl2 w-full max-w-[980px] max-h-[92vh] overflow-y-auto shadow-2xl animate-modal-in outline-none"
       >
         <button
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-earth hover:bg-forest/10 flex items-center justify-center text-ink-3 hover:text-forest transition-colors text-lg leading-none"
+          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-earth hover:bg-heading/10 flex items-center justify-center text-ink-3 hover:text-heading transition-colors text-lg leading-none"
         >
           ✕
         </button>
 
         <div className="p-5 sm:p-8">
           <div className="eyebrow mb-2">{mode === 'edit' ? 'Edit Product' : 'New Product'}</div>
-          <h2 className="font-serif text-forest text-2xl mb-6">
+          <h2 className="font-serif text-heading text-2xl mb-6">
             {mode === 'edit' ? `Edit "${initial?.name}"` : 'Add a new product'}
           </h2>
 
@@ -400,18 +404,40 @@ export default function ProductFormModal({ open, mode, initial, categories, onSa
                   aria-pressed={form.onSale}
                   className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-[13px] font-semibold transition-all
                     ${form.onSale
-                      ? 'bg-forest/10 border-forest text-forest'
-                      : 'bg-mist border-forest/15 text-ink-2 hover:border-forest/30'
+                      ? 'bg-heading/10 border-edge text-heading'
+                      : 'bg-mist border-edge/15 text-ink-2 hover:border-edge/30'
                     }`}
                 >
                   <span
-                    className={`relative w-9 h-5 rounded-full transition-colors shrink-0 ${form.onSale ? 'bg-forest' : 'bg-forest/20'}`}
+                    className={`relative w-9 h-5 rounded-full transition-colors shrink-0 ${form.onSale ? 'bg-heading' : 'bg-heading/20'}`}
                   >
                     <span
-                      className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${form.onSale ? 'translate-x-4' : 'translate-x-0'}`}
+                      className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-surface shadow transition-transform ${form.onSale ? 'translate-x-4' : 'translate-x-0'}`}
                     />
                   </span>
                   {form.onSale ? '🔥 On Sale — "Sale" badge will show' : 'Not on sale'}
+                </button>
+              </Field>
+
+              <Field label="Out of Stock" hint="Turn on to mark this product as out of stock. It will still be visible but won't allow ordering.">
+                <button
+                  type="button"
+                  onClick={() => setField('outOfStock', !form.outOfStock)}
+                  aria-pressed={form.outOfStock}
+                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-[13px] font-semibold transition-all
+                    ${form.outOfStock
+                      ? 'bg-red-500/10 border-edge text-red-600 dark:text-red-400'
+                      : 'bg-mist border-edge/15 text-ink-2 hover:border-edge/30'
+                    }`}
+                >
+                  <span
+                    className={`relative w-9 h-5 rounded-full transition-colors shrink-0 ${form.outOfStock ? 'bg-red-500' : 'bg-heading/20'}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-surface shadow transition-transform ${form.outOfStock ? 'translate-x-4' : 'translate-x-0'}`}
+                    />
+                  </span>
+                  {form.outOfStock ? '🚫 Out of Stock — Cannot be ordered' : 'In stock - Visible'}
                 </button>
               </Field>
 
@@ -423,7 +449,7 @@ export default function ProductFormModal({ open, mode, initial, categories, onSa
                       type="button"
                       onClick={() => setImageTab(tab)}
                       className={`px-3.5 py-1.5 rounded-full text-[12px] font-semibold border transition-all
-                        ${imageTab === tab ? 'bg-forest text-white border-forest' : 'bg-white text-ink-2 border-forest/15 hover:border-forest/40'}`}
+                        ${imageTab === tab ? 'bg-forest dark:bg-sage text-white border-edge' : 'bg-surface text-ink-2 border-edge/15 hover:border-edge/40'}`}
                     >
                       {tab === 'url' ? 'Image URL' : 'Upload File'}
                     </button>
@@ -466,7 +492,7 @@ export default function ProductFormModal({ open, mode, initial, categories, onSa
                         onClick={() => setField('bg', value)}
                         aria-label={`Gradient preset ${i + 1}`}
                         style={{ background: value }}
-                        className={`w-9 h-9 rounded-full border-2 transition-all ${active ? 'border-forest scale-110' : 'border-white shadow-sm hover:scale-105'}`}
+                        className={`w-9 h-9 rounded-full border-2 transition-all ${active ? 'border-edge scale-110' : 'border-white shadow-sm hover:scale-105'}`}
                       />
                     );
                   })}
@@ -477,31 +503,32 @@ export default function ProductFormModal({ open, mode, initial, categories, onSa
                     type="color"
                     value={gA}
                     onChange={(e) => setField('bg', `linear-gradient(145deg, ${e.target.value}, ${gB})`)}
-                    className="w-9 h-8 rounded cursor-pointer border border-forest/15"
+                    className="w-9 h-8 rounded cursor-pointer border border-edge/15"
                   />
                   <input
                     type="color"
                     value={gB}
                     onChange={(e) => setField('bg', `linear-gradient(145deg, ${gA}, ${e.target.value})`)}
-                    className="w-9 h-8 rounded cursor-pointer border border-forest/15"
+                    className="w-9 h-8 rounded cursor-pointer border border-edge/15"
                   />
                 </div>
               </Field>
 
-              <div className="flex gap-3 pt-2 sticky bottom-0 bg-white pb-1">
+              <div className="flex gap-3 pt-2 sticky bottom-0 bg-surface pb-1">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-3 rounded-full text-sm font-semibold border border-forest/15 text-ink-2 hover:border-forest/40 hover:text-forest transition-colors"
+                  disabled={isBusy}
+                  className="flex-1 py-3 rounded-full text-sm font-semibold border border-edge/15 text-ink-2 hover:border-edge/40 hover:text-heading transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={imageCompressing}
+                  disabled={imageCompressing || isBusy}
                   className="flex-1 py-3 rounded-full text-sm font-bold text-white bg-amber hover:bg-amber-lt transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber/30 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
                 >
-                  {imageCompressing ? 'Optimizing image…' : mode === 'edit' ? 'Save Changes' : 'Add Product'}
+                  {isBusy ? '⏳ Saving…' : imageCompressing ? 'Optimizing image…' : mode === 'edit' ? 'Save Changes' : 'Add Product'}
                 </button>
               </div>
             </form>

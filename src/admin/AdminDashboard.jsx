@@ -68,17 +68,17 @@ export default function AdminDashboard() {
   // product was deleted), fall back to "All" instead of silently
   // showing nothing.
   useEffect(() => {
-    if (activeFilter !== 'all' && activeFilter !== 'sale' && !categories.includes(activeFilter)) {
+    if (activeFilter !== 'all' && activeFilter !== 'sale' && activeFilter !== 'outOfStock' && !categories.includes(activeFilter)) {
       setActiveFilter('all');
     }
   }, [categories, activeFilter]);
 
-  const isCategoryActive = activeFilter !== 'all' && activeFilter !== 'sale';
+  const isCategoryActive = activeFilter !== 'all' && activeFilter !== 'sale' && activeFilter !== 'outOfStock';
 
   const filtered = useMemo(() => {
     let list = products.filter((p) => {
       const matchesFilter =
-        activeFilter === 'all' ? true : activeFilter === 'sale' ? p.onSale : p.category === activeFilter;
+        activeFilter === 'all' ? true : activeFilter === 'sale' ? p.onSale : activeFilter === 'outOfStock' ? p.outOfStock : p.category === activeFilter;
       const q = search.trim().toLowerCase();
       const matchesSearch = !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
       return matchesFilter && matchesSearch;
@@ -94,16 +94,16 @@ export default function AdminDashboard() {
   const paginated = filtered.slice((pageSafe - 1) * PAGE_SIZE, pageSafe * PAGE_SIZE);
 
   const stats = useMemo(() => {
-    const prices = products.map((p) => Number(p.price) || 0);
-    const avg = prices.length ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0;
     const onSaleCount = products.filter((p) => p.onSale).length;
+    const outOfStockCount = products.filter((p) => p.outOfStock).length;
     const categoryCount = isCategoryActive ? products.filter((p) => p.category === activeFilter).length : categories.length;
-    return { total: products.length, onSaleCount, avg, categoryCount };
+    return { total: products.length, onSaleCount, outOfStockCount, categoryCount };
   }, [products, categories, isCategoryActive, activeFilter]);
 
   const CARDS = [
     { key: 'all', label: 'All Products', icon: '🛒', count: stats.total },
     { key: 'sale', label: 'Products on Sale', icon: '🔥', count: stats.onSaleCount },
+    { key: 'outOfStock', label: 'Out of Stock', icon: '🚫', count: stats.outOfStockCount },
   ];
 
   const openAdd = () => {
@@ -197,7 +197,7 @@ export default function AdminDashboard() {
         <div className="flex flex-wrap items-start justify-between gap-4 mb-7">
           <div>
             <div className="eyebrow mb-2">Admin Panel</div>
-            <h1 className="font-serif text-forest text-[1.8rem] sm:text-[2.1rem]">Manage Products</h1>
+            <h1 className="font-serif text-heading text-[1.8rem] sm:text-[2.1rem]">Manage Products</h1>
             <p className="text-ink-3 text-sm mt-1">
               Tap a card below to see All Products, Products on Sale, or a specific Category.
             </p>
@@ -255,8 +255,8 @@ export default function AdminDashboard() {
                       aria-pressed={isActive}
                       className={`relative text-left rounded-xl2 p-4 sm:p-5 border-2 transition-all duration-200
                         ${isActive
-                          ? 'bg-forest border-forest shadow-md'
-                          : 'bg-white border-forest/8 hover:border-forest/25 hover:-translate-y-0.5 hover:shadow-sm'
+                          ? 'bg-forest dark:bg-sage border-edge shadow-md'
+                          : 'bg-surface border-edge/8 hover:border-edge/25 hover:-translate-y-0.5 hover:shadow-sm'
                         }`}
                     >
                       <div
@@ -265,7 +265,7 @@ export default function AdminDashboard() {
                       >
                         {card.icon}
                       </div>
-                      <p className={`font-serif text-2xl sm:text-3xl ${isActive ? 'text-white' : 'text-forest'}`}>{card.count}</p>
+                      <p className={`font-serif text-2xl sm:text-3xl ${isActive ? 'text-white' : 'text-heading'}`}>{card.count}</p>
                       <p className={`text-[11px] font-semibold mt-1 tracking-wide uppercase ${isActive ? 'text-white/80' : 'text-ink-3'}`}>
                         {card.label}
                       </p>
@@ -282,8 +282,8 @@ export default function AdminDashboard() {
                     aria-expanded={openMenu === 'categories'}
                     className={`relative w-full text-left rounded-xl2 p-4 sm:p-5 border-2 transition-all duration-200
                       ${isCategoryActive
-                        ? 'bg-forest border-forest shadow-md'
-                        : 'bg-white border-forest/8 hover:border-forest/25 hover:-translate-y-0.5 hover:shadow-sm'
+                        ? 'bg-forest dark:bg-sage border-edge shadow-md'
+                        : 'bg-surface border-edge/8 hover:border-edge/25 hover:-translate-y-0.5 hover:shadow-sm'
                       }`}
                   >
                     <div
@@ -292,7 +292,7 @@ export default function AdminDashboard() {
                     >
                       🗂️
                     </div>
-                    <p className={`font-serif text-2xl sm:text-3xl ${isCategoryActive ? 'text-white' : 'text-forest'}`}>
+                    <p className={`font-serif text-2xl sm:text-3xl ${isCategoryActive ? 'text-white' : 'text-heading'}`}>
                       {stats.categoryCount}
                     </p>
                     <p className={`text-[11px] font-semibold mt-1 tracking-wide uppercase flex items-center gap-1
@@ -303,7 +303,7 @@ export default function AdminDashboard() {
                     </p>
                   </button>
                   {openMenu === 'categories' && (
-                    <div role="listbox" className="absolute z-20 top-full left-0 mt-2 w-52 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl2 border border-forest/12 shadow-lg py-1.5 max-h-64 overflow-y-auto">
+                    <div role="listbox" className="absolute z-20 top-full left-0 mt-2 w-52 max-w-[calc(100vw-1.5rem)] bg-surface rounded-xl2 border border-edge/12 shadow-lg py-1.5 max-h-64 overflow-y-auto">
                       {categories.map((cat) => (
                         <button
                           key={cat}
@@ -315,7 +315,7 @@ export default function AdminDashboard() {
                             setPage(1);
                           }}
                           className={`w-full text-left px-4 py-2 text-[13px] capitalize transition-colors
-                            ${activeFilter === cat ? 'text-forest font-bold bg-earth' : 'text-ink-2 hover:bg-earth'}`}
+                            ${activeFilter === cat ? 'text-heading font-bold bg-earth' : 'text-ink-2 hover:bg-earth'}`}
                         >
                           {cat} ({products.filter((p) => p.category === cat).length})
                         </button>
@@ -324,14 +324,7 @@ export default function AdminDashboard() {
                   )}
                 </div>
 
-                {/* Average Price — display only, not clickable */}
-                <div className="text-left rounded-xl2 p-4 sm:p-5 border-2 border-forest/8 bg-white cursor-default">
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base mb-2.5 bg-amber/10 text-amber">
-                    💰
-                  </div>
-                  <p className="font-serif text-2xl sm:text-3xl text-forest">₹{stats.avg}</p>
-                  <p className="text-[11px] font-semibold mt-1 tracking-wide uppercase text-ink-3">Average Price</p>
-                </div>
+
               </div>
 
               {/* Toolbar — Search, Filter (sort), then Export/Import/Clear All */}
@@ -345,7 +338,7 @@ export default function AdminDashboard() {
                       setPage(1);
                     }}
                     placeholder="Search products by name or category…"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-full border border-forest/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-amber/20 focus:border-amber transition-shadow"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-full border border-edge/15 bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-amber/20 focus:border-amber transition-shadow"
                   />
                 </div>
 
@@ -355,8 +348,8 @@ export default function AdminDashboard() {
                     onClick={() => setOpenMenu((m) => (m === 'filter' ? null : 'filter'))}
                     className={`px-4 py-2.5 rounded-full text-[13px] font-semibold transition-all duration-200 border flex items-center gap-1.5
                       ${sortBy !== 'default'
-                        ? 'bg-forest text-white border-forest shadow-sm'
-                        : 'bg-white text-ink-2 border-forest/15 hover:border-forest/40 hover:text-forest'
+                        ? 'bg-forest dark:bg-sage text-white border-edge shadow-sm'
+                        : 'bg-surface text-ink-2 border-edge/15 hover:border-edge/40 hover:text-heading'
                       }`}
                     aria-haspopup="listbox" aria-expanded={openMenu === 'filter'}
                   >
@@ -364,12 +357,12 @@ export default function AdminDashboard() {
                     <span className="text-[10px]">▾</span>
                   </button>
                   {openMenu === 'filter' && (
-                    <div role="listbox" className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl2 border border-forest/12 shadow-lg py-1.5 max-h-64 overflow-y-auto">
+                    <div role="listbox" className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-surface rounded-xl2 border border-edge/12 shadow-lg py-1.5 max-h-64 overflow-y-auto">
                       {SORT_OPTIONS.map((opt) => (
                         <button key={opt.value} role="option" aria-selected={sortBy === opt.value}
                           onClick={() => { setSortBy(opt.value); setOpenMenu(null); setPage(1); }}
                           className={`w-full text-left px-4 py-2 text-[13px] transition-colors
-                            ${sortBy === opt.value ? 'text-forest font-bold bg-earth' : 'text-ink-2 hover:bg-earth'}`}>
+                            ${sortBy === opt.value ? 'text-heading font-bold bg-earth' : 'text-ink-2 hover:bg-earth'}`}>
                           {opt.label}
                         </button>
                       ))}
@@ -380,20 +373,20 @@ export default function AdminDashboard() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => exportAsJSON(filtered)}
-                    className="px-4 py-2.5 rounded-full text-[13px] font-semibold bg-white text-ink-2 border border-forest/15 hover:border-forest/40 hover:text-forest transition-all"
+                    className="px-4 py-2.5 rounded-full text-[13px] font-semibold bg-surface text-ink-2 border border-edge/15 hover:border-edge/40 hover:text-heading transition-all"
                   >
                     📤 Export (JSON)
                   </button>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-2.5 rounded-full text-[13px] font-semibold bg-white text-ink-2 border border-forest/15 hover:border-forest/40 hover:text-forest transition-all"
+                    className="px-4 py-2.5 rounded-full text-[13px] font-semibold bg-surface text-ink-2 border border-edge/15 hover:border-edge/40 hover:text-heading transition-all"
                   >
                     📥 Import
                   </button>
                   <input ref={fileInputRef} type="file" accept="application/json" onChange={handleImportFile} className="hidden" />
                   <button
                     onClick={() => setResetConfirmOpen(true)}
-                    className="px-4 py-2.5 rounded-full text-[13px] font-semibold bg-white text-ink-2 border border-forest/15 hover:border-red-300 hover:text-red-600 transition-all"
+                    className="px-4 py-2.5 rounded-full text-[13px] font-semibold bg-surface text-ink-2 border border-edge/15 hover:border-red-300 hover:text-red-600 transition-all"
                   >
                     🗑️ Clear All
                   </button>
@@ -407,9 +400,9 @@ export default function AdminDashboard() {
 
             {/* Product list */}
             {paginated.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-xl2 border border-forest/8">
+              <div className="text-center py-20 bg-surface rounded-xl2 border border-edge/8">
                 <p className="text-3xl mb-3">🔍</p>
-                <p className="text-forest font-serif text-lg mb-1">No products found</p>
+                <p className="text-heading font-serif text-lg mb-1">No products found</p>
                 <p className="text-ink-3 text-sm">Try a different search term, or pick another card above.</p>
               </div>
             ) : (
@@ -417,7 +410,7 @@ export default function AdminDashboard() {
                 {paginated.map((p) => (
                   <div
                     key={p.id}
-                    className="flex items-center gap-4 bg-white rounded-xl2 border border-forest/8 hover:border-forest/20 hover:shadow-sm transition-all duration-200 p-3 sm:p-3.5 flex-wrap sm:flex-nowrap"
+                    className="flex items-center gap-4 bg-surface rounded-xl2 border border-edge/8 hover:border-edge/20 hover:shadow-sm transition-all duration-200 p-3 sm:p-3.5 flex-wrap sm:flex-nowrap"
                   >
                     <div
                       className="w-14 h-14 rounded-xl shrink-0 flex items-center justify-center overflow-hidden"
@@ -436,26 +429,32 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="flex-1 min-w-[140px]">
-                      <p className="font-serif text-forest text-[15px] leading-snug truncate">{p.name}</p>
+                      <p className="font-serif text-heading text-[15px] leading-snug truncate">{p.name}</p>
                       <p className="text-[11px] text-amber font-bold uppercase tracking-wider mt-0.5">{p.category}</p>
                     </div>
 
                     {p.onSale && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shrink-0 bg-forest text-gold">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shrink-0 bg-green-500/20 text-green-700 dark:text-green-400">
                         🔥 Sale
+                      </span>
+                    )}
+
+                    {p.outOfStock && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shrink-0 bg-red-500/20 text-red-600 dark:text-red-400">
+                        🚫 Out of Stock
                       </span>
                     )}
 
                     <span className="text-[12px] text-ink-3 bg-earth px-2.5 py-1 rounded-full shrink-0">{p.weight}</span>
 
-                    <span className="font-serif text-forest text-base w-20 text-right shrink-0">₹{p.price}</span>
+                    <span className="font-serif text-heading text-base w-20 text-right shrink-0">₹{p.price}</span>
 
                     <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                       <button
                         onClick={() => openEdit(p)}
                         disabled={busy}
                         aria-label={`Edit ${p.name}`}
-                        className="w-9 h-9 rounded-lg flex items-center justify-center text-ink-2 hover:bg-earth hover:text-forest transition-colors text-base disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center text-ink-2 hover:bg-earth hover:text-heading transition-colors text-base disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         ✏️
                       </button>
@@ -479,7 +478,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={pageSafe === 1}
-                  className="w-9 h-9 rounded-full text-[15px] font-bold border border-forest/20 text-ink-2 hover:border-forest hover:text-forest disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="w-9 h-9 rounded-full text-[15px] font-bold border border-edge/20 text-ink-2 hover:border-edge hover:text-heading disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   ‹
                 </button>
@@ -489,7 +488,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={pageSafe === totalPages}
-                  className="w-9 h-9 rounded-full text-[15px] font-bold border border-forest/20 text-ink-2 hover:border-forest hover:text-forest disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="w-9 h-9 rounded-full text-[15px] font-bold border border-edge/20 text-ink-2 hover:border-edge hover:text-heading disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   ›
                 </button>
@@ -506,6 +505,7 @@ export default function AdminDashboard() {
         categories={categories}
         onSave={handleSave}
         onClose={() => setFormOpen(false)}
+        isBusy={busy}
       />
 
       <ConfirmDialog

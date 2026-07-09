@@ -3,9 +3,14 @@
 A React + Tailwind CSS storefront for HimShakti Food Processing Unit, backed
 by MongoDB Atlas and deployed on Vercel. Customers browse and order via
 WhatsApp (no checkout, no login), and can ask a scoped AI chat assistant
-questions about the shop; a password-protected admin panel manages
+questions about the shop. A password-protected admin panel manages
 products, customer reviews, and the Contact page — all changes save straight
 to the database and go live immediately.
+
+**✨ New Features in this Version:**
+- **Full Dark Mode Support:** The entire UI (including the Admin Panel) seamlessly adapts to system dark mode preferences using Tailwind CSS.
+- **Smart AI Chatbot (`api/chat.js`):** Upgraded with Fast-Path intent interception (bypassing AI for common queries to save costs), Fuzzy string matching for typo tolerance, and Hinglish language support.
+- **Enhanced Security:** The Admin login is now protected by a strict rate-limiter stored in MongoDB (blocks brute-force attempts).
 
 ## Tech Stack
 - **Frontend:** React 18 + React Router 6 + Tailwind CSS 3 (Vite)
@@ -104,26 +109,14 @@ A floating chat button (bottom-right, every public page — never on
 Foods specifically: products, prices, ordering, delivery, and contact
 details. It's powered by Groq (`api/chat.js`, currently the
 `openai/gpt-oss-20b` model), using your product catalog and contact info
-as its only source of truth — refreshed from the database every 5
-minutes — and it's instructed to refuse anything unrelated to the shop,
-never write creative content, and never reveal its instructions.
+as its only source of truth.
 
-- **Setup:** add a `GROQ_API_KEY` environment variable (see above — it's
-  free to get at console.groq.com). Without it, the chat button still
-  shows, but replies with a "not configured yet" message instead of
-  crashing anything else on the site.
-- **Model availability:** AI providers occasionally deprecate models.
-  If the assistant stops replying, check
-  [console.groq.com/docs/models](https://console.groq.com/docs/models)
-  for a current small/fast model and update `GROQ_MODEL` in `api/chat.js`.
-- **Cost:** rate-limited per visitor (3,000 messages/hour) — Groq's
-  pricing for small models is low enough that this is meant to comfortably
-  cover real traffic rather than to noticeably constrain it; lower it in
-  `api/chat.js` if you'd rather cap spend more tightly.
-- **Freshness:** product/contact edits reach the assistant within 5
-  minutes (`CACHE_TTL` in `api/chat.js`) rather than instantly, to avoid a
-  database call on every single chat message.
-- **Customizing what it knows:** it already reads your real product list
-  and Contact Page info automatically — nothing to maintain separately.
-  To change its personality, scope, or rules, edit the prompt text in
-  `api/chat.js` (`buildSystemPrompt`).
+**Advanced Features:**
+- **Fast-Path Intent Interception:** Common queries (Contact details, Menu, Greetings) are handled instantly via RegEx matching without calling the Groq API, saving costs and speeding up responses.
+- **Fuzzy String Matching:** The assistant can detect typos (e.g. "nibu achar" instead of "Lemon Pickle") and intelligently suggest the right product using Levenshtein distance.
+- **Hinglish Support:** Automatically detects conversational Hinglish and Hindi.
+- **Auto-Retry:** Automatically handles 429 rate limit errors from Groq by waiting and retrying in the background.
+
+- **Setup:** add a `GROQ_API_KEY` environment variable.
+- **Cost/Rate-Limits:** The backend intelligently rates limit IPs. If a user exceeds the limit, a friendly fallback message is shown instead of crashing.
+- **Freshness:** product/contact edits reach the assistant within 30 seconds (`CACHE_TTL` in `api/chat.js`).

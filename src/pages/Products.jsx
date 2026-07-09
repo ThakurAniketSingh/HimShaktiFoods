@@ -157,7 +157,7 @@ export default function Products() {
                 setPage(1);
               }}
               placeholder="Search products by name or category…"
-              className="w-full pl-10 pr-4 py-2.5 rounded-full border border-forest/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-amber/20 focus:border-amber transition-shadow"
+              className="w-full pl-10 pr-4 py-2.5 rounded-full border border-edge/15 bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-amber/20 focus:border-amber transition-shadow"
             />
           </div>
 
@@ -166,8 +166,8 @@ export default function Products() {
               onClick={() => { setSaleOnly((s) => !s); setOpenMenu(null); }}
               className={`px-4 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 border
                 ${saleOnly
-                  ? 'bg-forest text-white border-forest shadow-sm'
-                  : 'bg-white text-ink-2 border-forest/15 hover:border-forest/40 hover:text-forest'
+                  ? 'bg-forest dark:bg-sage text-white border-edge shadow-sm'
+                  : 'bg-surface text-ink-2 border-edge/15 hover:border-edge/40 hover:text-heading'
                 }`}
               aria-pressed={saleOnly}>
               🔥 Sale
@@ -178,19 +178,19 @@ export default function Products() {
                 onClick={() => setOpenMenu((m) => (m === 'category' ? null : 'category'))}
                 className={`px-4 py-2 rounded-full text-[13px] font-semibold capitalize transition-all duration-200 border flex items-center gap-1.5
                   ${currentFilter !== 'all'
-                    ? 'bg-forest text-white border-forest shadow-sm'
-                    : 'bg-white text-ink-2 border-forest/15 hover:border-forest/40 hover:text-forest'
+                    ? 'bg-forest dark:bg-sage text-white border-edge shadow-sm'
+                    : 'bg-surface text-ink-2 border-edge/15 hover:border-edge/40 hover:text-heading'
                   }`}
                 aria-haspopup="listbox" aria-expanded={openMenu === 'category'}>
                 Category{currentFilter !== 'all' ? `: ${currentFilter}` : ''}
                 <span className="text-[10px]">▾</span>
               </button>
               {openMenu === 'category' && (
-                <div role="listbox" className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl2 border border-forest/12 shadow-lg py-1.5 max-h-64 overflow-y-auto">
+                <div role="listbox" className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-surface rounded-xl2 border border-edge/12 shadow-lg py-1.5 max-h-64 overflow-y-auto">
                   {CATS.map((cat) => (
                     <button key={cat} role="option" aria-selected={currentFilter === cat} onClick={() => handleFilter(cat)}
                       className={`w-full text-left px-4 py-2 text-[13px] capitalize transition-colors
-                        ${currentFilter === cat ? 'text-forest font-bold bg-earth' : 'text-ink-2 hover:bg-earth'}`}>
+                        ${currentFilter === cat ? 'text-heading font-bold bg-earth' : 'text-ink-2 hover:bg-earth'}`}>
                       {cat === 'all' ? 'All Categories' : cat}
                     </button>
                   ))}
@@ -203,20 +203,20 @@ export default function Products() {
                 onClick={() => setOpenMenu((m) => (m === 'filter' ? null : 'filter'))}
                 className={`px-4 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 border flex items-center gap-1.5
                   ${sortBy !== 'default'
-                    ? 'bg-forest text-white border-forest shadow-sm'
-                    : 'bg-white text-ink-2 border-forest/15 hover:border-forest/40 hover:text-forest'
+                    ? 'bg-forest dark:bg-sage text-white border-edge shadow-sm'
+                    : 'bg-surface text-ink-2 border-edge/15 hover:border-edge/40 hover:text-heading'
                   }`}
                 aria-haspopup="listbox" aria-expanded={openMenu === 'filter'}>
                 Filter{sortBy !== 'default' ? `: ${SORT_OPTIONS.find((o) => o.value === sortBy)?.label}` : ''}
                 <span className="text-[10px]">▾</span>
               </button>
               {openMenu === 'filter' && (
-                <div role="listbox" className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl2 border border-forest/12 shadow-lg py-1.5 max-h-64 overflow-y-auto">
+                <div role="listbox" className="absolute z-20 top-full left-1/2 -translate-x-1/2 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-surface rounded-xl2 border border-edge/12 shadow-lg py-1.5 max-h-64 overflow-y-auto">
                   {SORT_OPTIONS.map((opt) => (
                     <button key={opt.value} role="option" aria-selected={sortBy === opt.value}
                       onClick={() => { setSortBy(opt.value); setOpenMenu(null); }}
                       className={`w-full text-left px-4 py-2 text-[13px] transition-colors
-                        ${sortBy === opt.value ? 'text-forest font-bold bg-earth' : 'text-ink-2 hover:bg-earth'}`}>
+                        ${sortBy === opt.value ? 'text-heading font-bold bg-earth' : 'text-ink-2 hover:bg-earth'}`}>
                       {opt.label}
                     </button>
                   ))}
@@ -252,20 +252,20 @@ export default function Products() {
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-1.5 flex-nowrap" aria-label="Pagination">
             <button onClick={() => setPage((p) => Math.max(p - 1, 1))} disabled={page === 1}
-              className="w-9 h-9 rounded-full text-[15px] font-bold border border-forest/20 text-ink-2 hover:border-forest hover:text-forest transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center" aria-label="Previous page">
+              className="w-9 h-9 rounded-full text-[15px] font-bold border border-edge/20 text-ink-2 hover:border-edge hover:text-heading transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center" aria-label="Previous page">
               ‹
             </button>
 
             {visiblePages[0] > 1 && (
               <>
-                <button onClick={() => setPage(1)} className="w-9 h-9 rounded-full text-[13px] font-bold border border-forest/20 text-ink-2 hover:border-forest hover:text-forest">1</button>
+                <button onClick={() => setPage(1)} className="w-9 h-9 rounded-full text-[13px] font-bold border border-edge/20 text-ink-2 hover:border-edge hover:text-heading">1</button>
                 {visiblePages[0] > 2 && <span className="text-ink-3 text-xs select-none px-0.5">…</span>}
               </>
             )}
 
             {visiblePages.map((n) => (
               <button key={n} onClick={() => setPage(n)}
-                className={`w-9 h-9 rounded-full text-[13px] font-bold transition-all duration-200 ${page === n ? 'bg-forest text-white shadow-sm' : 'border border-forest/20 text-ink-2 hover:border-forest hover:text-forest'}`}
+                className={`w-9 h-9 rounded-full text-[13px] font-bold transition-all duration-200 ${page === n ? 'bg-forest dark:bg-sage text-white shadow-sm' : 'border border-edge/20 text-ink-2 hover:border-edge hover:text-heading'}`}
                 aria-current={page === n ? 'page' : undefined}>
                 {n}
               </button>
@@ -274,12 +274,12 @@ export default function Products() {
             {visiblePages[visiblePages.length - 1] < totalPages && (
               <>
                 {visiblePages[visiblePages.length - 1] < totalPages - 1 && <span className="text-ink-3 text-xs select-none px-0.5">…</span>}
-                <button onClick={() => setPage(totalPages)} className="w-9 h-9 rounded-full text-[13px] font-bold border border-forest/20 text-ink-2 hover:border-forest hover:text-forest">{totalPages}</button>
+                <button onClick={() => setPage(totalPages)} className="w-9 h-9 rounded-full text-[13px] font-bold border border-edge/20 text-ink-2 hover:border-edge hover:text-heading">{totalPages}</button>
               </>
             )}
 
             <button onClick={() => setPage((p) => Math.min(p + 1, totalPages))} disabled={page === totalPages}
-              className="w-9 h-9 rounded-full text-[15px] font-bold border border-forest/20 text-ink-2 hover:border-forest hover:text-forest transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center" aria-label="Next page">
+              className="w-9 h-9 rounded-full text-[15px] font-bold border border-edge/20 text-ink-2 hover:border-edge hover:text-heading transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center" aria-label="Next page">
               ›
             </button>
           </div>

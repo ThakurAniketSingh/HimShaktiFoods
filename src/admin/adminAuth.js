@@ -27,7 +27,7 @@ export function getAdminKey() {
   }
 }
 
-export function clearAdminKey() {
+function clearAdminKey() {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {

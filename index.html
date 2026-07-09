@@ -50,6 +50,20 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
   </head>
   <body>
+    <!-- Applies the saved theme BEFORE React mounts, so a returning
+         visitor who chose dark mode never sees a flash of light mode
+         first. Deliberately does NOT check prefers-color-scheme — light
+         is always the default unless the person explicitly chose dark
+         (see src/context/ThemeContext.jsx for the full explanation). -->
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem('hs_theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <div id="root"></div>
     <!-- Shown only when JavaScript is disabled; hidden otherwise by React mounting -->
     <noscript>
