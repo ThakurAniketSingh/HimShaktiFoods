@@ -1,9 +1,12 @@
 // api/admin/login.js — POST /api/admin/login
 //
 // Checks the password against ADMIN_PASSWORD (an environment variable,
-// never sent to the browser as code). On success, the frontend remembers
-// this same password locally and re-sends it as the x-admin-key header on
-// every future write request — there's no separate session/token system.
+// never sent to the browser as code). On success, issues a short-lived
+// signed session token in an httpOnly cookie (see lib/session.js) — the
+// real password is never sent back to the browser, and the browser can't
+// read the cookie's contents even with JavaScript. Every future write
+// request is authorized by the browser automatically resending that
+// cookie, checked server-side in lib/auth.js.
 //
 // Brute-force protection: failed attempts from the same IP are counted
 // (see lib/LoginAttempt.js). After too many failures in a short window,
@@ -14,6 +17,7 @@
 
 import { connectDB } from '../../lib/db.js';
 import LoginAttempt from '../../lib/LoginAttempt.js';
+import { createSessionToken, buildSessionCookie } from '../../lib/session.js';
 
 const MAX_ATTEMPTS = 10;
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
@@ -47,6 +51,12 @@ export default async function handler(req, res) {
 
     const { password } = req.body || {};
     if (password && password === process.env.ADMIN_PASSWORD) {
+      // Correct password: issue a signed session token instead of ever
+      // sending the password itself back to the browser. It's set as an
+      // httpOnly cookie, so page JavaScript can't read it, and it expires
+      // on its own after 12 hours (see lib/session.js).
+      const token = createSessionToken();
+      res.setHeader('Set-Cookie', buildSessionCookie(token));
       return res.status(200).json({ success: true });
     }
 

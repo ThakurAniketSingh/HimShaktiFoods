@@ -10,7 +10,7 @@ to the database and go live immediately.
 **✨ New Features in this Version:**
 - **Full Dark Mode Support:** The entire UI (including the Admin Panel) seamlessly adapts to system dark mode preferences using Tailwind CSS.
 - **Smart AI Chatbot (`api/chat.js`):** Upgraded with Fast-Path intent interception (bypassing AI for common queries to save costs), Fuzzy string matching for typo tolerance, and Hinglish language support.
-- **Enhanced Security:** The Admin login is now protected by a strict rate-limiter stored in MongoDB (blocks brute-force attempts).
+- **Enhanced Security:** The Admin login is now protected by a strict rate-limiter stored in MongoDB (blocks brute-force attempts), and by a signed, short-lived (12-hour) session cookie instead of resending the raw password on every request — see `lib/session.js`.
 
 ## Tech Stack
 - **Frontend:** React 18 + React Router 6 + Tailwind CSS 3 (Vite)

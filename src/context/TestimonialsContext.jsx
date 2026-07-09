@@ -48,7 +48,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api } from '../admin/apiClient';
-import { getAdminKey } from '../admin/adminAuth';
+import { isAuthenticated } from '../admin/adminAuth';
 import { useVisibleInterval, SYNC_INTERVAL_MS } from '../hooks/useVisibleInterval';
 
 // True only when the browser is actually sitting on an /admin/* URL.
@@ -117,11 +117,13 @@ export function TestimonialsProvider({ children }) {
 
   const refresh = useCallback(async () => {
     setError('');
-    const adminKey = getAdminKey();
-    const isAdmin = Boolean(adminKey) && isAdminSection();
+    const isAdmin = isAuthenticated() && isAdminSection();
 
     try {
-      const data = isAdmin ? await api.getAllTestimonials(adminKey) : await api.getTestimonials();
+      // Both branches hit the same server route now — the server tells
+      // pending-vs-approved apart using the session cookie itself (see
+      // api/testimonials/index.js), not anything the client passes in.
+      const data = isAdmin ? await api.getAllTestimonials() : await api.getTestimonials();
       const resolved = Array.isArray(data) ? data : [];
       setTestimonials(resolved);
       if (!isAdmin) writeCache(resolved);
@@ -136,7 +138,7 @@ export function TestimonialsProvider({ children }) {
     // Best-effort version bookkeeping — see ProductsContext for why this
     // is wrapped separately from the main fetch above.
     try {
-      const meta = isAdmin ? await api.getTestimonialsMeta(adminKey) : await api.getTestimonialsMeta();
+      const meta = await api.getTestimonialsMeta();
       versionRef.current = meta?.version ?? null;
       if (!isAdmin) writeVersionCache(versionRef.current);
     } catch {
@@ -145,11 +147,8 @@ export function TestimonialsProvider({ children }) {
   }, []);
 
   const syncIfChanged = useCallback(async () => {
-    const adminKey = getAdminKey();
-    const isAdmin = Boolean(adminKey) && isAdminSection();
-
     try {
-      const meta = isAdmin ? await api.getTestimonialsMeta(adminKey) : await api.getTestimonialsMeta();
+      const meta = await api.getTestimonialsMeta();
       if (meta?.version !== versionRef.current) {
         await refresh();
       } else {
@@ -169,30 +168,30 @@ export function TestimonialsProvider({ children }) {
   useVisibleInterval(syncIfChanged, SYNC_INTERVAL_MS);
 
   const addTestimonial = useCallback(async (testimonial) => {
-    const created = await api.createTestimonial(testimonial, getAdminKey());
+    const created = await api.createTestimonial(testimonial);
     setTestimonials((prev) => [...prev, created]);
     return created;
   }, []);
 
   const updateTestimonial = useCallback(async (id, updates) => {
-    const updated = await api.updateTestimonial(id, updates, getAdminKey());
+    const updated = await api.updateTestimonial(id, updates);
     setTestimonials((prev) => prev.map((t) => (t.id === id ? updated : t)));
     return updated;
   }, []);
 
   const deleteTestimonial = useCallback(async (id) => {
-    await api.deleteTestimonial(id, getAdminKey());
+    await api.deleteTestimonial(id);
     setTestimonials((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
   const clearAllTestimonials = useCallback(async () => {
-    const data = await api.clearAllTestimonials(getAdminKey());
+    const data = await api.clearAllTestimonials();
     setTestimonials(data);
   }, []);
 
   const importTestimonials = useCallback(
     async (items) => {
-      await api.importTestimonials(items, getAdminKey());
+      await api.importTestimonials(items);
       await refresh();
     },
     [refresh]

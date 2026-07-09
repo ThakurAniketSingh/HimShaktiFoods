@@ -32,7 +32,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api } from '../admin/apiClient';
-import { getAdminKey } from '../admin/adminAuth';
+
 import { useVisibleInterval, SYNC_INTERVAL_MS } from '../hooks/useVisibleInterval';
 
 // ── localStorage helpers ──────────────────────────────────────────
@@ -152,7 +152,7 @@ export function ContactProvider({ children }) {
   useVisibleInterval(syncIfChanged, SYNC_INTERVAL_MS);
 
   const updateContact = useCallback(async (updates) => {
-    const updated = await api.updateContactInfo(updates, getAdminKey());
+    const updated = await api.updateContactInfo(updates);
     setContact(updated);
     writeCache(updated);
     // Contact changes (especially the WhatsApp number) are rare but

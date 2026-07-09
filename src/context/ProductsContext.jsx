@@ -41,7 +41,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api } from '../admin/apiClient';
-import { getAdminKey } from '../admin/adminAuth';
+
 import { useVisibleInterval, SYNC_INTERVAL_MS } from '../hooks/useVisibleInterval';
 
 // The "house" order categories have always appeared in across the site.
@@ -176,7 +176,7 @@ export function ProductsProvider({ children }) {
   useVisibleInterval(syncIfChanged, SYNC_INTERVAL_MS);
 
   const addProduct = useCallback(async (product) => {
-    const created = await api.createProduct(product, getAdminKey());
+    const created = await api.createProduct(product);
     setProducts((prev) => {
       const next = [created, ...prev];
       writeCache(next); // cache reflects the new product immediately
@@ -186,7 +186,7 @@ export function ProductsProvider({ children }) {
   }, []);
 
   const updateProduct = useCallback(async (id, updates) => {
-    const updated = await api.updateProduct(id, updates, getAdminKey());
+    const updated = await api.updateProduct(id, updates);
     setProducts((prev) => {
       const next = prev.map((p) => (p.id === id ? updated : p));
       writeCache(next);
@@ -196,7 +196,7 @@ export function ProductsProvider({ children }) {
   }, []);
 
   const deleteProduct = useCallback(async (id) => {
-    await api.deleteProduct(id, getAdminKey());
+    await api.deleteProduct(id);
     setProducts((prev) => {
       const next = prev.filter((p) => p.id !== id);
       writeCache(next);
@@ -205,14 +205,14 @@ export function ProductsProvider({ children }) {
   }, []);
 
   const clearAllProducts = useCallback(async () => {
-    const data = await api.clearAllProducts(getAdminKey());
+    const data = await api.clearAllProducts();
     setProducts(data);
     writeCache(data);
   }, []);
 
   const importProducts = useCallback(
     async (items) => {
-      await api.importProducts(items, getAdminKey());
+      await api.importProducts(items);
       await refresh(); // refresh() already writes the cache + version on success
     },
     [refresh]

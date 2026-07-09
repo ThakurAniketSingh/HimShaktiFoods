@@ -16,8 +16,11 @@ const TABS = [
 export default function AdminLayout({ children }) {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    // Waits for the server to clear the httpOnly session cookie before
+    // navigating away — logout() also clears the local "logged in" flag
+    // even if the network call fails, so this never gets the user stuck.
+    await logout();
     navigate('/admin/login', { replace: true });
   };
 

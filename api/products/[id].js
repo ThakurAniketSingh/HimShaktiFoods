@@ -3,7 +3,7 @@
 // The [id] in the filename is Vercel's convention for a dynamic route
 // segment — whatever value is in that part of the URL shows up as
 // req.query.id. Both methods here are protected: only requests carrying
-// the correct x-admin-key header are allowed through.
+// a valid admin session cookie are allowed through (see lib/auth.js).
 
 import { connectDB } from '../../lib/db.js';
 import Product from '../../lib/Product.js';

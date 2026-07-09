@@ -5,7 +5,7 @@
 // query parameter) purely to stay under Vercel's serverless function
 // count limit — each one's behavior is byte-for-byte identical to what
 // used to be two separate files (api/admin/reset.js and
-// api/admin/import.js). Both require the correct x-admin-key header.
+// api/admin/import.js). Both require a valid admin session cookie (see lib/auth.js).
 //
 // ?op=reset — deletes EVERY product from the database, leaving the
 // catalog completely empty. This is what the Products admin panel's
@@ -22,6 +22,7 @@
 import { connectDB } from '../../lib/db.js';
 import Product from '../../lib/Product.js';
 import { isAuthorized } from '../../lib/auth.js';
+import { getNextId } from '../../lib/Counter.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -49,9 +50,15 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Send { products: [...] } with at least one product.' });
       }
 
-      const last = await Product.findOne().sort({ id: -1 });
-      let nextId = last ? last.id + 1 : 1;
-      const toInsert = items.map((p) => ({ ...p, id: nextId++ }));
+      // One counter increment per item, awaited in order — each call is
+      // itself atomic (see lib/Counter.js), so even if another request
+      // (a single POST, or another import) runs at the exact same time,
+      // nobody ends up handed the same id twice.
+      const toInsert = [];
+      for (const p of items) {
+        const id = await getNextId('Product');
+        toInsert.push({ ...p, id });
+      }
 
       const created = await Product.insertMany(toInsert);
       return res.status(201).json({ inserted: created.length });

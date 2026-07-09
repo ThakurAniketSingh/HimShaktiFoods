@@ -2,12 +2,13 @@
 // GET /api/testimonials?meta=1, and POST /api/testimonials
 //
 // GET is public, but what it returns depends on who's asking:
-//   - Normal visitors (no admin key) only get reviews with status
-//     "approved" — pending submissions stay invisible until an admin
-//     approves them. They also never get the `phone` field.
-//   - The admin panel (sends the correct x-admin-key header) gets EVERY
-//     review, pending and approved, INCLUDING each reviewer's phone
-//     number — so it can verify a submission is genuine before approving.
+//   - Normal visitors (no valid admin session) only get reviews with
+//     status "approved" — pending submissions stay invisible until an
+//     admin approves them. They also never get the `phone` field.
+//   - The admin panel (holds a valid session cookie — see lib/auth.js)
+//     gets EVERY review, pending and approved, INCLUDING each reviewer's
+//     phone number — so it can verify a submission is genuine before
+//     approving.
 //
 // GET with ?meta=1 returns a tiny "has anything changed?" version signal
 // instead of the full list (used to be its own /api/testimonials/meta
@@ -36,6 +37,7 @@ import { connectDB } from '../../lib/db.js';
 import Testimonial from '../../lib/Testimonial.js';
 import { isAuthorized } from '../../lib/auth.js';
 import { toClientReview } from '../../lib/toClientReview.js';
+import { getNextId } from '../../lib/Counter.js';
 
 export default async function handler(req, res) {
   // Always fetch fresh — never let a CDN, proxy, or browser cache this,
@@ -72,8 +74,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'name and text are required.' });
       }
 
-      const last = await Testimonial.findOne().sort({ id: -1 });
-      const nextId = last ? last.id + 1 : 1;
+      const nextId = await getNextId('Testimonial');
 
       const created = await Testimonial.create({ ...body, id: nextId, status: 'approved' });
       return res.status(201).json(toClientReview(created, { includePhone: true }));

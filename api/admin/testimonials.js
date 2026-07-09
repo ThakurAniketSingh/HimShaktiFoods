@@ -6,7 +6,7 @@
 // count limit — each one's behavior is byte-for-byte identical to what
 // used to be two separate files (api/admin/reset-testimonials.js and
 // api/admin/import-testimonials.js). Both require the correct
-// x-admin-key header.
+// admin session cookie (see lib/auth.js).
 //
 // ?op=reset — deletes EVERY review from the database, leaving the
 // Reviews section completely empty. This is what the Reviews admin
@@ -22,6 +22,7 @@
 import { connectDB } from '../../lib/db.js';
 import Testimonial from '../../lib/Testimonial.js';
 import { isAuthorized } from '../../lib/auth.js';
+import { getNextId } from '../../lib/Counter.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -49,9 +50,14 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Send { testimonials: [...] } with at least one review.' });
       }
 
-      const last = await Testimonial.findOne().sort({ id: -1 });
-      let nextId = last ? last.id + 1 : 1;
-      const toInsert = items.map((t) => ({ ...t, id: nextId++ }));
+      // One counter increment per item, awaited in order — see
+      // lib/Counter.js for why this avoids duplicate ids under
+      // concurrent requests.
+      const toInsert = [];
+      for (const t of items) {
+        const id = await getNextId('Testimonial');
+        toInsert.push({ ...t, id });
+      }
 
       const created = await Testimonial.insertMany(toInsert);
       return res.status(201).json({ inserted: created.length });

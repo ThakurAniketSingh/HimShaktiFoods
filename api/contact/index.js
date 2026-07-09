@@ -12,7 +12,7 @@
 // timestamp — no count needed, because there's nothing to add or
 // delete, only ever something to edit.
 //
-// PUT is protected (only someone with the correct x-admin-key header —
+// PUT is protected (only someone with a valid admin session cookie —
 // the admin panel's Contact Page tab — can change it).
 //
 // Unlike products/testimonials, there's exactly one ContactInfo document

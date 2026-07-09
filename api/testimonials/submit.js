@@ -27,6 +27,7 @@
 import { connectDB } from '../../lib/db.js';
 import Testimonial from '../../lib/Testimonial.js';
 import { toClientReview } from '../../lib/toClientReview.js';
+import { getNextId } from '../../lib/Counter.js';
 
 const MAX_NAME_LEN = 30;
 const MAX_LOCATION_LEN = 30;
@@ -91,8 +92,7 @@ export default async function handler(req, res) {
         .json({ error: "You've already submitted a review recently. Please try again tomorrow." });
     }
 
-    const last = await Testimonial.findOne().sort({ id: -1 });
-    const nextId = last ? last.id + 1 : 1;
+    const nextId = await getNextId('Testimonial');
 
     const created = await Testimonial.create({
       id: nextId,

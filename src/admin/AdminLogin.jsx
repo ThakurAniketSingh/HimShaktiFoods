@@ -2,7 +2,7 @@
 // (forest backdrop, mountain watermark, the same logo mark from the Navbar).
 import { useState } from 'react';
 import { useNavigate, useLocation, Link, Navigate } from 'react-router-dom';
-import { setAdminKey, isAuthenticated } from './adminAuth';
+import { markLoggedIn, isAuthenticated } from './adminAuth';
 import { api } from './apiClient';
 
 function MtnWatermark() {
@@ -56,7 +56,11 @@ export default function AdminLogin() {
     setError('');
     try {
       await api.login(password);
-      setAdminKey(password);
+      // The server already set an httpOnly session cookie in the login
+      // response — we never touch the real password again from here on.
+      // This just flips a local "logged in" flag so the UI shows the
+      // dashboard instead of the login form.
+      markLoggedIn();
       const dest = location.state?.from?.pathname ?? '/admin';
       navigate(dest, { replace: true });
     } catch (err) {

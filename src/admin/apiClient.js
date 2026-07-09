@@ -1,14 +1,19 @@
 // src/admin/apiClient.js — every call the frontend makes to our own
 // backend (the /api/* serverless functions) goes through here. Centralizing
-// it means: one place that knows the URL shape, one place that attaches
-// the admin key header, and one place that turns a failed request into a
-// readable error message for a toast.
+// it means: one place that knows the URL shape and one place that turns a
+// failed request into a readable error message for a toast.
+//
+// Admin authentication used to mean attaching an `x-admin-key` header
+// with the raw password on every call. Now the server issues an httpOnly
+// session cookie on login (see api/admin/login.js), and the browser
+// attaches that cookie automatically on every request as long as we set
+// `credentials: 'include'` — there's no longer anything for this file to
+// read or attach by hand.
 
 const BASE = '/api';
 
-async function request(path, { method = 'GET', body, adminKey } = {}) {
+async function request(path, { method = 'GET', body } = {}) {
   const headers = { 'Content-Type': 'application/json' };
-  if (adminKey) headers['x-admin-key'] = adminKey;
 
   let res;
   try {
@@ -16,6 +21,9 @@ async function request(path, { method = 'GET', body, adminKey } = {}) {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      // Send the httpOnly session cookie with every request (needed for
+      // same-site fetch calls in some browsers' default cookie policies).
+      credentials: 'include',
       // Never serve a cached response — without this, some browsers will
       // show stale data for a moment (e.g. the old address) right after
       // a save, before a background revalidation catches up.
@@ -56,28 +64,29 @@ async function request(path, { method = 'GET', body, adminKey } = {}) {
 export const api = {
   getProducts: () => request('/products'),
   getProductsMeta: () => request('/products?meta=1'),
-  createProduct: (product, adminKey) => request('/products', { method: 'POST', body: product, adminKey }),
-  updateProduct: (id, updates, adminKey) => request(`/products/${id}`, { method: 'PUT', body: updates, adminKey }),
-  deleteProduct: (id, adminKey) => request(`/products/${id}`, { method: 'DELETE', adminKey }),
-  clearAllProducts: (adminKey) => request('/admin/products?op=reset', { method: 'POST', adminKey }),
-  importProducts: (products, adminKey) =>
-    request('/admin/products?op=import', { method: 'POST', body: { products }, adminKey }),
+  createProduct: (product) => request('/products', { method: 'POST', body: product }),
+  updateProduct: (id, updates) => request(`/products/${id}`, { method: 'PUT', body: updates }),
+  deleteProduct: (id) => request(`/products/${id}`, { method: 'DELETE' }),
+  clearAllProducts: () => request('/admin/products?op=reset', { method: 'POST' }),
+  importProducts: (products) =>
+    request('/admin/products?op=import', { method: 'POST', body: { products } }),
   login: (password) => request('/admin/login', { method: 'POST', body: { password } }),
+  logout: () => request('/admin/logout', { method: 'POST' }),
 
   getTestimonials: () => request('/testimonials'),
-  getAllTestimonials: (adminKey) => request('/testimonials', { adminKey }),
-  getTestimonialsMeta: (adminKey) => request('/testimonials?meta=1', { adminKey }),
-  createTestimonial: (testimonial, adminKey) => request('/testimonials', { method: 'POST', body: testimonial, adminKey }),
-  updateTestimonial: (id, updates, adminKey) => request(`/testimonials/${id}`, { method: 'PUT', body: updates, adminKey }),
-  deleteTestimonial: (id, adminKey) => request(`/testimonials/${id}`, { method: 'DELETE', adminKey }),
-  clearAllTestimonials: (adminKey) => request('/admin/testimonials?op=reset', { method: 'POST', adminKey }),
-  importTestimonials: (testimonials, adminKey) =>
-    request('/admin/testimonials?op=import', { method: 'POST', body: { testimonials }, adminKey }),
+  getAllTestimonials: () => request('/testimonials'),
+  getTestimonialsMeta: () => request('/testimonials?meta=1'),
+  createTestimonial: (testimonial) => request('/testimonials', { method: 'POST', body: testimonial }),
+  updateTestimonial: (id, updates) => request(`/testimonials/${id}`, { method: 'PUT', body: updates }),
+  deleteTestimonial: (id) => request(`/testimonials/${id}`, { method: 'DELETE' }),
+  clearAllTestimonials: () => request('/admin/testimonials?op=reset', { method: 'POST' }),
+  importTestimonials: (testimonials) =>
+    request('/admin/testimonials?op=import', { method: 'POST', body: { testimonials } }),
   submitTestimonial: (review) => request('/testimonials/submit', { method: 'POST', body: review }),
 
   getContactInfo: () => request('/contact'),
   getContactMeta: () => request('/contact?meta=1'),
-  updateContactInfo: (updates, adminKey) => request('/contact', { method: 'PUT', body: updates, adminKey }),
+  updateContactInfo: (updates) => request('/contact', { method: 'PUT', body: updates }),
 
   sendChatMessage: (messages) => request('/chat', { method: 'POST', body: { messages } }),
 };

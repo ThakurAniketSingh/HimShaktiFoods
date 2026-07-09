@@ -7,12 +7,13 @@
 // file — merged in here purely to stay under Vercel's serverless
 // function count limit; the behavior is byte-for-byte identical, just
 // reached via a query parameter instead of a second file/route).
-// POST is protected (only someone with the correct x-admin-key header can
+// POST is protected (only someone with a valid admin session cookie can
 // add a product).
 //
-// Note: this used to auto-reseed the catalog from src/data.js whenever the
-// database was empty. That was removed — deleting products (from the admin
-// panel or directly in MongoDB) is now permanent. The admin panel's
+// Note: this used to auto-reseed the catalog from a bundled starter
+// product list whenever the database was empty. That was removed (and the
+// old seed file deleted) — deleting products (from the admin panel or
+// directly in MongoDB) is now permanent. The admin panel's
 // "Clear All" button (calls /api/admin/products?op=reset) only empties the
 // catalog — it does not bring the sample products back. Use the Import
 // button with a JSON file if you want products back.
@@ -21,6 +22,7 @@ import { connectDB } from '../../lib/db.js';
 import Product from '../../lib/Product.js';
 import { isAuthorized } from '../../lib/auth.js';
 import { toClient } from '../../lib/toClient.js';
+import { getNextId } from '../../lib/Counter.js';
 
 export default async function handler(req, res) {
   // Always fetch fresh — never let a CDN, proxy, or browser cache this,
@@ -75,8 +77,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'name, category, and a valid non-negative price are required.' });
       }
 
-      const last = await Product.findOne().sort({ id: -1 });
-      const nextId = last ? last.id + 1 : 1;
+      const nextId = await getNextId('Product');
 
       const created = await Product.create({ ...body, id: nextId });
       return res.status(201).json(toClient(created));
