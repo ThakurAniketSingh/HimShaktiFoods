@@ -42,7 +42,21 @@ export default async function handler(req, res) {
   // next read.
   res.setHeader('Cache-Control', 'no-store');
 
-  const segments = Array.isArray(req.query.path) ? req.query.path : [];
+  // Prefer req.query.path (how Vercel's [[...path]] convention normally
+  // exposes the matched segments), but fall back to parsing req.url
+  // directly if that's ever empty — e.g. some Vercel Node.js runtime
+  // versions/configurations don't populate req.query the same way. This
+  // fallback re-derives the same segments straight from the URL, so
+  // routing keeps working either way.
+  let segments = Array.isArray(req.query.path) ? req.query.path : [];
+  if (segments.length === 0) {
+    const pathname = (req.url || '').split('?')[0]; // strip query string
+    segments = pathname
+      .replace(/^\/?api\/?/, '') // drop leading "/api/" or "api/"
+      .split('/')
+      .filter(Boolean)
+      .map((s) => decodeURIComponent(s));
+  }
   const [first, second] = segments;
 
   try {
