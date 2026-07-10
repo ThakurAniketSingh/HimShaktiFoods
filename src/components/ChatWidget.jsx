@@ -327,7 +327,7 @@ export default function ChatWidget() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask about products, orders, delivery…"
-              maxLength={500}
+              maxLength={200}
               className="flex-1 resize-none max-h-24 px-3.5 py-2.5 rounded-xl bg-mist border border-edge/12
                 text-[13.5px] text-ink placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-amber/25 focus:border-amber"
             />
