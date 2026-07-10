@@ -50,6 +50,30 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Send { products: [...] } with at least one product.' });
       }
 
+      // Validate every item BEFORE writing anything — same rules already
+      // enforced on the single-product POST route (see
+      // api/products/index.js). Catching a bad row here means one typo'd
+      // JSON file can't silently insert a nameless or negative-price
+      // product; the whole import is rejected with a precise pointer to
+      // which item (and which field) was the problem, so it's easy to fix
+      // and re-upload rather than ending up with a half-imported catalog.
+      for (let i = 0; i < items.length; i++) {
+        const p = items[i];
+        const priceNum = Number(p?.price);
+        if (!p || typeof p !== 'object') {
+          return res.status(400).json({ error: `Item ${i + 1}: expected a product object.` });
+        }
+        if (!p.name || typeof p.name !== 'string') {
+          return res.status(400).json({ error: `Item ${i + 1} ("${p.name || 'unnamed'}"): name is required.` });
+        }
+        if (!p.category || typeof p.category !== 'string') {
+          return res.status(400).json({ error: `Item ${i + 1} ("${p.name}"): category is required.` });
+        }
+        if (!Number.isFinite(priceNum) || priceNum < 0) {
+          return res.status(400).json({ error: `Item ${i + 1} ("${p.name}"): a valid non-negative price is required.` });
+        }
+      }
+
       // One counter increment per item, awaited in order — each call is
       // itself atomic (see lib/Counter.js), so even if another request
       // (a single POST, or another import) runs at the exact same time,
@@ -57,7 +81,7 @@ export default async function handler(req, res) {
       const toInsert = [];
       for (const p of items) {
         const id = await getNextId('Product');
-        toInsert.push({ ...p, id });
+        toInsert.push({ ...p, price: Number(p.price), id });
       }
 
       const created = await Product.insertMany(toInsert);
