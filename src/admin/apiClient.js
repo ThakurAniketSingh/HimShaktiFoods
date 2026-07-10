@@ -86,6 +86,7 @@ export const api = {
     request('/admin/products?op=import', { method: 'POST', body: { products } }),
   login: (password) => request('/admin/login', { method: 'POST', body: { password }, skipAuthRedirect: true }),
   logout: () => request('/admin/logout', { method: 'POST', skipAuthRedirect: true }),
+  checkSession: () => request('/admin/session', { skipAuthRedirect: true }),
 
   getTestimonials: () => request('/testimonials'),
   getAllTestimonials: () => request('/testimonials'),

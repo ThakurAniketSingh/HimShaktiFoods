@@ -14,7 +14,13 @@ to the database and go live immediately.
 
 ## Tech Stack
 - **Frontend:** React 18 + React Router 6 + Tailwind CSS 3 (Vite)
-- **Backend:** Vercel Serverless Functions (`/api`) + Mongoose
+- **Backend:** Vercel Serverless Functions (`/api`) + Mongoose. All REST
+  routes (products, testimonials, contact, admin login) are served by a
+  single catch-all function (`api/[[...path]].js`) that dispatches to
+  plain route-logic modules under `api/_handlers/` — files starting with
+  `_` don't count as separate functions on Vercel. Combined with the AI
+  chat endpoint (`api/chat.js`), the whole backend uses only **2**
+  serverless functions total, well under the Hobby plan's 12-function cap.
 - **Database:** MongoDB Atlas
 - **AI:** Groq API (the chat assistant, `api/chat.js`)
 
