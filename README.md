@@ -14,13 +14,18 @@ to the database and go live immediately.
 
 ## Tech Stack
 - **Frontend:** React 18 + React Router 6 + Tailwind CSS 3 (Vite)
-- **Backend:** Vercel Serverless Functions (`/api`) + Mongoose. All REST
-  routes (products, testimonials, contact, admin login) are served by a
-  single catch-all function (`api/[[...path]].js`) that dispatches to
-  plain route-logic modules under `api/_handlers/` — files starting with
-  `_` don't count as separate functions on Vercel. Combined with the AI
-  chat endpoint (`api/chat.js`), the whole backend uses only **2**
-  serverless functions total, well under the Hobby plan's 12-function cap.
+- **Backend:** Vercel Serverless Functions (`/api`) + Mongoose. Each REST
+  route (products, testimonials, contact, admin) lives in its own file
+  under `/api`, following Vercel's standard one-file-per-route convention
+  (e.g. `api/products/index.js`, `api/products/[id].js`).
+  **⚠️ Function count:** this adds up to exactly **12** serverless
+  functions — the maximum allowed on Vercel's free Hobby plan. Adding
+  even one more `/api/*.js` file will fail to deploy on Hobby ("No more
+  than 12 Serverless Functions can be added to a Deployment"). If you
+  need to add a new route, either upgrade to a Pro plan, or consolidate
+  routes into fewer files (group related handlers behind a single file
+  and branch on `req.method`/`req.query`, or use a `[[...path]].js`
+  catch-all router — ask if you'd like that version instead).
 - **Database:** MongoDB Atlas
 - **AI:** Groq API (the chat assistant, `api/chat.js`)
 
