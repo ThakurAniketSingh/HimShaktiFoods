@@ -22,7 +22,12 @@ export function markLoggedIn() {
   }
 }
 
-function clearLoggedInFlag() {
+// Also called from apiClient.js when a request comes back 401 — that
+// means the session cookie expired (sessions last 12 hours) or was never
+// valid, so the local "logged in" flag is now stale and should be cleared
+// too, or the dashboard would keep showing itself while every action
+// silently fails.
+export function clearLoggedInFlag() {
   try {
     localStorage.removeItem(LOGGED_IN_FLAG_KEY);
   } catch {

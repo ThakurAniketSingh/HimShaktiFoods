@@ -10,9 +10,11 @@
 // `credentials: 'include'` — there's no longer anything for this file to
 // read or attach by hand.
 
+import { clearLoggedInFlag } from './adminAuth';
+
 const BASE = '/api';
 
-async function request(path, { method = 'GET', body } = {}) {
+async function request(path, { method = 'GET', body, skipAuthRedirect = false } = {}) {
   const headers = { 'Content-Type': 'application/json' };
 
   let res;
@@ -56,6 +58,18 @@ async function request(path, { method = 'GET', body } = {}) {
   }
 
   if (!res.ok) {
+    // 401 on an admin-only route means the session cookie is missing or
+    // expired (sessions last 12 hours — see lib/session.js). Without this,
+    // the dashboard stays visible (the local "logged in" flag has no
+    // expiry of its own) while every action silently fails underneath it.
+    // Clearing the flag and bouncing to /admin/login makes the expiry
+    // visible instead of confusing.
+    if (res.status === 401 && !skipAuthRedirect) {
+      clearLoggedInFlag();
+      if (typeof window !== 'undefined' && !window.location.pathname.endsWith('/admin/login')) {
+        window.location.href = '/admin/login';
+      }
+    }
     throw new Error(data?.error || `Request failed (${res.status})`);
   }
   return data;
@@ -70,8 +84,8 @@ export const api = {
   clearAllProducts: () => request('/admin/products?op=reset', { method: 'POST' }),
   importProducts: (products) =>
     request('/admin/products?op=import', { method: 'POST', body: { products } }),
-  login: (password) => request('/admin/login', { method: 'POST', body: { password } }),
-  logout: () => request('/admin/logout', { method: 'POST' }),
+  login: (password) => request('/admin/login', { method: 'POST', body: { password }, skipAuthRedirect: true }),
+  logout: () => request('/admin/logout', { method: 'POST', skipAuthRedirect: true }),
 
   getTestimonials: () => request('/testimonials'),
   getAllTestimonials: () => request('/testimonials'),
@@ -82,7 +96,7 @@ export const api = {
   clearAllTestimonials: () => request('/admin/testimonials?op=reset', { method: 'POST' }),
   importTestimonials: (testimonials) =>
     request('/admin/testimonials?op=import', { method: 'POST', body: { testimonials } }),
-  submitTestimonial: (review) => request('/testimonials/submit', { method: 'POST', body: review }),
+  submitTestimonial: (review) => request('/testimonials/submit', { method: 'POST', body: review, skipAuthRedirect: true }),
 
   getContactInfo: () => request('/contact'),
   getContactMeta: () => request('/contact?meta=1'),
