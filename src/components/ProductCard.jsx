@@ -13,7 +13,7 @@ const PLACEHOLDER =
 // Builds a WhatsApp deep-link with the product name and price pre-filled.
 const buildWaUrl = (product, whatsappNumber) => {
   const msg =
-    `Namaste HimShakti! 🙏\nI'd like to order:\n\n*${product.name}* — ₹${product.price}\nQty: 1\n\nPlease share payment & delivery details.`;
+    `Namaste HimShakti!\nI'd like to order:\n\n*${product.name}* — ₹${product.price}\nQty: 1\n\nPlease share payment & delivery details.`;
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`;
 };
 
@@ -72,13 +72,13 @@ function Modal({ product, onClose }) {
                 {product.onSale && (
                   <span className="inline-block text-[10px] font-bold uppercase tracking-wider
                     px-2.5 py-0.5 rounded-full bg-forest text-gold dark:bg-green-600 dark:text-white">
-                    🔥 Sale
+                    Sale
                   </span>
                 )}
                 {product.outOfStock && (
                   <span className="inline-block text-[10px] font-bold uppercase tracking-wider
                     px-2.5 py-0.5 rounded-full bg-red-500 text-white shadow-sm">
-                    🚫 Out of Stock
+                    Out of Stock
                   </span>
                 )}
               </div>
@@ -182,14 +182,14 @@ export default function ProductCard({ product }) {
               <span className="text-[10px] font-bold uppercase
                 tracking-wider px-2.5 py-[3px] rounded-full
                 bg-forest text-gold shadow-sm">
-                🔥 Sale
+                Sale
               </span>
             )}
             {product.outOfStock && (
               <span className="text-[10px] font-bold uppercase
                 tracking-wider px-2.5 py-[3px] rounded-full
                 bg-red-500 text-white shadow-sm">
-                🚫 Out of Stock
+                Out of Stock
               </span>
             )}
           </div>

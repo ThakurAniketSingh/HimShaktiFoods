@@ -17,6 +17,18 @@ const RATE_LIMIT_MAX = 1000;
 const MAX_HISTORY_MESSAGES = 10;
 const MAX_MESSAGE_LEN = 200;
 
+/**
+ * Strip control characters and clamp length — lightweight sanitization
+ * to avoid passing garbage bytes into regex matchers or the LLM.
+ */
+function sanitizeInput(text) {
+  if (typeof text !== 'string') return '';
+  return text
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // strip control chars
+    .trim()
+    .slice(0, MAX_MESSAGE_LEN);
+}
+
 let cachedData = null;
 let cacheExpiry = 0;
 const CACHE_TTL = 30 * 1000; 
@@ -39,7 +51,7 @@ function getClientIp(req) {
   return req.socket?.remoteAddress || 'unknown';
 }
 
-function buildSystemPrompt(products, contact) {
+function buildSystemPrompt(products, contact, contextProductIds = []) {
   const catalogByCategory = {};
   products.forEach((p) => {
     const cat = p.category || 'Uncategorized';
@@ -51,12 +63,13 @@ function buildSystemPrompt(products, contact) {
   for (const [cat, items] of Object.entries(catalogByCategory)) {
     catalogText += `\n**${cat}**\n`;
     items.forEach((p) => {
+      const isContext = contextProductIds.includes(p.id?.toString());
       const sale = p.onSale ? ' [ON SALE]' : '';
       const stock = p.outOfStock ? ' [OUT OF STOCK]' : '';
       const weight = p.weight ? ` | ${p.weight}` : '';
-      const desc = p.description ? ` | ${p.description}` : '';
-      const ingredients = p.ingredients?.length ? ` | Ingredients: ${p.ingredients.join(', ')}` : '';
-      const shelf = p.shelfLife ? ` | Shelf Life: ${p.shelfLife}` : '';
+      const desc = (isContext && p.description) ? ` | ${p.description}` : '';
+      const ingredients = (isContext && p.ingredients?.length) ? ` | Ingredients: ${p.ingredients.join(', ')}` : '';
+      const shelf = (isContext && p.shelfLife) ? ` | Shelf Life: ${p.shelfLife}` : '';
       catalogText += `- ${p.name} — ₹${p.price}${weight}${sale}${stock}${desc}${ingredients}${shelf}\n`;
     });
   }
@@ -160,7 +173,6 @@ const FILLER_RE = /^[\s!.,?]*(ok+|okay+|okk+|oky+|accha+|achha+|acha+|thik|theek
 const IDENTITY_RE = /^[\s!.,?]*(tum k[ao]un?|tum kya|mai k[ao]un?|m k[ao]un?|ma k[ao]un?|main k[ao]un?|aap k[ao]un?|aap kya|kon ho tum|kaun ho tum|kaun ho aap|kon ho aap|who am i|who r u|tumhra kaam|tumhara kaam|aapka kaam|tera kaam|kya karte? ho|kya krti ho|kya krte ho|what do you do|what is your job|what are you|tum kya karte?|kha rehte ho|kaha rehte ho|kaha rahte ho|tu h kon|tu kaun|insaan h|insaan hai|kya be bot|tu bot)[\s!.,?]*$/i;
 
 // Gibberish detector
-const GIBBERISH_RE = /^[\s!.,?]*[a-z]{0,2}(\s+[a-z]{1,3}){0,2}[\s!.,?]*$/i;
 function looksLikeGibberish(text) {
   const cleaned = text.replace(/[^a-zA-Z\s]/g, '').trim();
   if (cleaned.length < 2) return true;
@@ -274,6 +286,44 @@ const RECOMMEND_TERMS = [
   'kuch healthy', 'healthy batao', 'healthy product',
 ];
 
+const COMPARE_TERMS = [
+  'compare', 'comparison', 'difference between', 'vs', 'versus',
+  'konsa better', 'kaunsa better', 'dono mein', 'dono me',
+  'konsa acha', 'kaunsa acha', 'konsa accha', 'kaunsa accha',
+  'which is better', 'which one is better', 'konsa le', 'kaunsa lu',
+  'dono ka difference', 'farak kya hai', 'fark kya hai',
+];
+
+const BULK_TERMS = [
+  'bulk order', 'bulk mein', 'bulk me', 'wholesale', 'wholesale price',
+  'dukan ke liye', 'shop ke liye', 'resell', 'reseller',
+  'quantity mein', 'quantity me', 'badi quantity', 'large quantity',
+  'business ke liye', 'bulk rate', 'wholesale rate',
+];
+
+const ABOUT_TERMS = [
+  'about himshakti', 'about him shakti', 'himshakti kya hai', 'himshakti foods kya',
+  'what is himshakti', 'who is himshakti', 'aap kaun ho', 'aap kon ho',
+  'who are you', 'ye company kya hai', 'ye brand kya hai', 'tumhare baare mein',
+  'aapke baare mein', 'apke bare mein', 'tell me about yourself',
+  'about this company', 'about this brand', 'about your company',
+  'tum kon', 'tum kaun', 'tum kya', 'kon ho tum', 'kaun ho tum',
+  'tumhra kaam', 'tumhara kaam', 'aapka kaam', 'tera kaam',
+  'kya karte ho', 'kya krti ho', 'kya krte ho', 'what do you do',
+];
+
+const PRODUCT_INFO_TERMS = [
+  'tell me about', 'details of', 'detail of', 'info about', 'information about',
+  'ke baare mein', 'ke bare mein', 'batao', 'btao', 'dikhao', 'details batao',
+  'kya hai', 'kya hota hai', 'ingredients kya', 'shelf life kya',
+  'describe', 'explain', 'what is',
+];
+
+const CATEGORY_BROWSE_TERMS = [
+  'show me', 'dikhao', 'dikha do', 'list karo', 'products in',
+  'wale products', 'category mein', 'category ke',
+];
+
 function getRefusal(userLang) {
   if (userLang === 'hindi') {
     return 'यह मेरे scope से बाहर है 😊 लेकिन HimShakti के products, ordering या delivery के बारे में कुछ भी पूछिए!';
@@ -284,22 +334,19 @@ function getRefusal(userLang) {
   return 'That\'s outside what I can help with 😊 But feel free to ask me anything about our products, ordering, or delivery!';
 }
 
-function levenshtein(a, b) {
-  if (a.length === 0) return b.length;
-  if (b.length === 0) return a.length;
-  const matrix = [];
-  for (let i = 0; i <= b.length; i++) { matrix[i] = [i]; }
-  for (let j = 0; j <= a.length; j++) { matrix[0][j] = j; }
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
-      }
-    }
-  }
-  return matrix[b.length][a.length];
+function ngramSimilarity(s1, s2) {
+  if (s1 === s2) return 1;
+  if (s1.length < 2 || s2.length < 2) return 0;
+  const getBigrams = (str) => {
+    const bigrams = new Set();
+    for (let i = 0; i < str.length - 1; i++) bigrams.add(str.slice(i, i + 2));
+    return bigrams;
+  };
+  const bg1 = getBigrams(s1);
+  const bg2 = getBigrams(s2);
+  let intersection = 0;
+  for (const bg of bg1) if (bg2.has(bg)) intersection++;
+  return (2.0 * intersection) / (bg1.size + bg2.size);
 }
 
 function matchProductInText(lowerText, products) {
@@ -363,9 +410,10 @@ function matchProductInText(lowerText, products) {
         if (pw === uw) {
           score += 2; // Exact word match
           break;
-        } else if (Math.abs(uw.length - pw.length) <= 1 && uw.length >= 4) {
-          if (levenshtein(uw, pw) <= 1) {
-            score += 1; // Fuzzy match
+        } else if (uw.length >= 3) {
+          const sim = ngramSimilarity(uw, pw);
+          if (sim >= 0.5) {
+            score += 1.5; // High confidence fuzzy match
             break;
           }
         }
@@ -395,7 +443,7 @@ function buildProductDetailReply(product, waLink, userLang) {
   if (p.outOfStock) {
     parts.push(userLang === 'hindi' ? '🚫 *अभी स्टॉक में नहीं है*' : '🚫 *Currently Out of Stock*');
   } else if (p.onSale) {
-    parts.push(userLang === 'hindi' ? '🔥 *अभी सेल पर!*' : '🔥 *Currently on Sale!*');
+    parts.push(userLang === 'hindi' ? '🔥 *अभी सेल पर!*' : '🔥 *Currently on Sale*');
   }
 
   if (p.description) parts.push(p.description);
@@ -419,22 +467,54 @@ function buildProductDetailReply(product, waLink, userLang) {
   const prefilledText = encodeURIComponent(msg);
   const productWaLink = `${waLink}?text=${prefilledText}`;
   if (!p.outOfStock) {
-    if (userLang === 'hindi') {
-      parts.push(`[Order on WhatsApp](${productWaLink}) 😊`);
-    } else {
-      parts.push(`[Order on WhatsApp](${productWaLink}) 😊`);
-    }
+    parts.push(userLang === 'hindi'
+      ? `[WhatsApp पर ऑर्डर करें](${productWaLink})`
+      : `[Order on WhatsApp](${productWaLink})`);
   } else {
-    if (userLang === 'hindi') {
-      parts.push(`Restock ke liye [Message on Whatsapp](${waLink}) 😊`);
-    } else {
-      parts.push(`Ask about restock on [Message on Whatsapp](${waLink}) 😊`);
-    }
+    parts.push(userLang === 'hindi'
+      ? `Restock ke liye [Message on Whatsapp](${waLink})`
+      : `Ask about restock on [Message on Whatsapp](${waLink})`);
   }
 
   return parts.join('\n');
 }
-function tryFastPathReply(userText, products, contact, userLang) {
+
+/**
+ * Match ALL products mentioned in the user's text (for multi-product queries
+ * like "lemon pickle and mango pickle ka price batao").
+ */
+function matchAllProductsInText(lowerText, products) {
+  const matches = [];
+  const sorted = [...products].sort((a, b) => (b.name?.length || 0) - (a.name?.length || 0));
+  for (const p of sorted) {
+    if (p.name && lowerText.includes(p.name.toLowerCase())) {
+      matches.push(p);
+    }
+  }
+  // Fall back to the fuzzy single-match if no exact names were found
+  if (matches.length === 0) {
+    const single = matchProductInText(lowerText, products);
+    if (single) matches.push(single);
+  }
+  return matches;
+}
+
+/**
+ * Scan conversation history (most-recent first) for a product name in the
+ * last assistant reply — lets the bot resolve pronouns like "iska price"
+ * or "yeh order karo" by remembering what was just discussed.
+ */
+function getLastMentionedProduct(messages, products) {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === 'assistant') {
+      const match = matchProductInText((messages[i].content || '').toLowerCase(), products);
+      if (match) return match;
+    }
+  }
+  return null;
+}
+
+function tryFastPathReply(userText, products, contact, userLang, allMessages) {
   const text = (userText || '').trim();
   const lower = text.toLowerCase();
 
@@ -451,7 +531,7 @@ function tryFastPathReply(userText, products, contact, userLang) {
     if (userLang === 'hinglish') {
       return 'Namaste! 🙏 HimShakti Foods mein aapka swagat hai!\nHumare authentic Pahadi products ke baare mein kuch bhi poochiye — price, ingredients, ordering kaise kare — sab bata denge! 😊';
     }
-    return 'Namaste! 🙏 Welcome to HimShakti Foods!\nAsk me anything about our authentic Himalayan products — prices, ingredients, how to order, delivery — I\'m here to help! 😊';
+    return 'Namaste! Welcome to HimShakti Foods!\nAsk me anything about our authentic Himalayan products — prices, ingredients, how to order, delivery — I\'m here to help!';
   }
 
   // ── 3. Thanks ────────────────────────────────────────────────────
@@ -490,9 +570,9 @@ function tryFastPathReply(userText, products, contact, userLang) {
   // ── 6. Gibberish detection ───────────────────────────────────────
   if (lower.length > 5 && looksLikeGibberish(text)) {
     if (userLang === 'hindi') {
-      return 'माफ़ कीजिए, मैं समझ नहीं पाया। 😊 कृपया दोबारा बताइए — products, ordering, या delivery के बारे में पूछिए!';
+      return 'माफ़ कीजिए, मैं समझ नहीं पाया। कृपया दोबारा बताइए — products, ordering, या delivery के बारे में पूछिए!';
     }
-    return 'I\'m sorry, I didn\'t catch that. 😊 Could you rephrase? I\'m happy to help with our products, ordering, or delivery!';
+    return 'I\'m sorry, I didn\'t catch that. Could you rephrase? I\'m happy to help with our products, ordering, or delivery!';
   }
 
   const waLink = `https://wa.me/${contact?.whatsappNumber || ''}`;
@@ -500,12 +580,12 @@ function tryFastPathReply(userText, products, contact, userLang) {
   // ── 7. How to order ─────────────────────────────────────────────
   if (containsAny(lower, HOWTOORDER_TERMS)) {
     if (userLang === 'hindi') {
-      return `बस Products पेज पर जाइए, जो पसंद आए उस पर "Order on WhatsApp" दबाइए (या [Message on Whatsapp](${waLink})) — पेमेंट और डिलीवरी WhatsApp पर तय हो जाएगी। कोई अकाउंट या चेकआउट नहीं चाहिए! 😊`;
+      return `बस Products पेज पर जाइए, जो पसंद आए उस पर "Order on WhatsApp" दबाइए (या [Message on Whatsapp](${waLink})) — पेमेंट और डिलीवरी WhatsApp पर तय हो जाएगी। कोई अकाउंट या चेकआउट नहीं चाहिए!`;
     }
     if (userLang === 'hinglish') {
-      return `Products page pe jaiye, jo pasand aaye uska "Order on WhatsApp" button dabaaiye (ya [Message on Whatsapp](${waLink})) — payment aur delivery WhatsApp pe confirm ho jayegi. Koi account ya checkout nahi chahiye! 😊`;
+      return `Products page pe jaiye, jo pasand aaye uska "Order on WhatsApp" button dabaaiye (ya [Message on Whatsapp](${waLink})) — payment aur delivery WhatsApp pe confirm ho jayegi. Koi account ya checkout nahi chahiye!`;
     }
-    return `Just browse our Products page, then tap "Order on WhatsApp" on anything you like (or [Message on Whatsapp](${waLink})) — we'll confirm payment & delivery over WhatsApp chat. No account or checkout needed! 😊`;
+    return `Just browse our Products page, then tap "Order on WhatsApp" on anything you like (or [Message on Whatsapp](${waLink})) — we'll confirm payment & delivery over WhatsApp chat. No account or checkout needed!`;
   }
 
   // ── 8. Contact info (standalone "address" or full terms) ─────────
@@ -534,13 +614,13 @@ function tryFastPathReply(userText, products, contact, userLang) {
     const saleItems = products.filter((p) => p.onSale);
     if (saleItems.length === 0) {
       return userLang === 'hindi'
-        ? 'अभी कोई प्रोडक्ट सेल पर नहीं है — Products पेज पर नज़र बनाए रखिए! 😊'
-        : "Nothing is on sale right now — keep an eye on our Products page! 😊";
+        ? 'अभी कोई प्रोडक्ट सेल पर नहीं है — Products पेज पर नज़र बनाए रखिए!'
+        : "Nothing is on sale right now — keep an eye on our Products page!";
     }
     const names = saleItems.map((p) => `${p.name} (₹${p.price})`).join(', ');
     return userLang === 'hindi'
-      ? `अभी ये सेल पर हैं: ${names}। 😊`
-      : `These are currently on sale: ${names}. 😊`;
+      ? `अभी ये सेल पर हैं: ${names}।`
+      : `These are currently on sale: ${names}.`;
   }
 
   // ── 12. Stock check (BEFORE product intent — fixes overlap) ─────
@@ -548,39 +628,39 @@ function tryFastPathReply(userText, products, contact, userLang) {
     const outOfStockItems = products.filter((p) => p.outOfStock);
     if (outOfStockItems.length === 0) {
       return userLang === 'hindi'
-        ? 'सभी प्रोडक्ट्स अभी स्टॉक में हैं! 😊'
-        : 'All products are currently in stock! 😊';
+        ? 'सभी प्रोडक्ट्स अभी स्टॉक में हैं!'
+        : 'All products are currently in stock!';
     }
     const names = outOfStockItems.map((p) => `${p.name}`).join(', ');
     return userLang === 'hindi'
-      ? `ये प्रोडक्ट्स अभी out of stock हैं: ${names}। कुछ समय बाद दोबारा चेक करें। 😊`
-      : `These products are currently out of stock: ${names}. Please check back soon. 😊`;
+      ? `ये प्रोडक्ट्स अभी out of stock हैं: ${names}। कुछ समय बाद दोबारा चेक करें।`
+      : `These products are currently out of stock: ${names}. Please check back soon.`;
   }
 
   // ── 13. Menu / All products ─────────────────────────────────────
   if (containsAny(lower, MENU_TERMS)) {
     const categoryNames = [...new Set(products.map((p) => p.category).filter(Boolean))];
     return userLang === 'hindi'
-      ? `हमारे पास अभी ${products.length} प्रोडक्ट्स हैं, ${categoryNames.length} कैटेगरी में: ${categoryNames.join(', ')}। पूरी लिस्ट Products पेज पर देखें। कौन सा प्रोडक्ट देखना चाहेंगे? 😊`
-      : `We currently have ${products.length} products in ${categoryNames.length} categories: ${categoryNames.join(', ')}. Browse the Products page for the full list. Which one interests you? 😊`;
+      ? `हमारे पास अभी ${products.length} प्रोडक्ट्स हैं, ${categoryNames.length} कैटेगरी में: ${categoryNames.join(', ')}। पूरी लिस्ट Products पेज पर देखें। कौन सा प्रोडक्ट देखना चाहेंगे?`
+      : `We currently have ${products.length} products in ${categoryNames.length} categories: ${categoryNames.join(', ')}. Browse the Products page for the full list. Which one interests you?`;
   }
 
   // ── 14. Reviews ─────────────────────────────────────────────────
   if (containsAny(lower, REVIEW_TERMS)) {
     return userLang === 'hindi'
-      ? 'हमारी Contact पेज पर जाइए — वहाँ "Leave a Review" फॉर्म से आप अपना अनुभव शेयर कर सकते हैं। 😊'
-      : 'Head to our Contact page — there\'s a "Leave a Review" form there where you can share your experience. 😊';
+      ? 'हमारी Contact पेज पर जाइए — वहाँ "Leave a Review" फॉर्म से आप अपना अनुभव शेयर कर सकते हैं।'
+      : 'Head to our Contact page — there\'s a "Leave a Review" form there where you can share your experience.';
   }
 
   // ── 15. Cancel order ────────────────────────────────────────────
   if (containsAny(lower, CANCEL_TERMS)) {
     if (userLang === 'hindi') {
-      return `अपना ऑर्डर कैंसिल करने के लिए कृपया हमें [Message on Whatsapp](${waLink}) पर बताएं, हम आपकी मदद करेंगे! 😊`;
+      return `अपना ऑर्डर कैंसिल करने के लिए कृपया हमें [Message on Whatsapp](${waLink}) पर बताएं, हम आपकी मदद करेंगे!`;
     }
     if (userLang === 'hinglish') {
-      return `Apna order cancel karne ke liye please humein [Message on Whatsapp](${waLink}) par batayein, hum aapki madad karenge! 😊`;
+      return `Apna order cancel karne ke liye please humein [Message on Whatsapp](${waLink}) par batayein, hum aapki madad karenge!`;
     }
-    return `To cancel your order, please [Message on Whatsapp](${waLink}) and let us know. We'll help you out! 😊`;
+    return `To cancel your order, please [Message on Whatsapp](${waLink}) and let us know. We'll help you out!`;
   }
 
   // ── 16. Recommendations ────────────────────────────────────────
@@ -588,8 +668,8 @@ function tryFastPathReply(userText, products, contact, userLang) {
     const inStock = products.filter((p) => !p.outOfStock);
     if (inStock.length === 0) {
       return userLang === 'hindi'
-        ? 'अभी सभी प्रोडक्ट्स out of stock हैं — जल्दी वापस आएंगे! 😊'
-        : 'All products are currently out of stock — they\'ll be back soon! 😊';
+        ? 'अभी सभी प्रोडक्ट्स out of stock हैं — जल्दी वापस आएंगे!'
+        : 'All products are currently out of stock — they\'ll be back soon!';
     }
 
     const picked = [];
@@ -614,55 +694,50 @@ function tryFastPathReply(userText, products, contact, userLang) {
       return `• **${p.name}** — ₹${p.price}${desc}`;
     });
     if (userLang === 'hindi') {
-      return `यहाँ कुछ popular picks हैं जो आपको ज़रूर पसंद आएंगे! 🏔️\n\n${lines.join('\n')}\n\nकिसी के बारे बारे में detail चाहिए? या [Message on Whatsapp](${waLink}) 😊`;
+      return `यहाँ कुछ popular picks हैं जो आपको ज़रूर पसंद आएंगे! 🏔️\n\n${lines.join('\n')}\n\nकिसी के बारे बारे में detail चाहिए? या [Message on Whatsapp](${waLink})`;
     }
     if (userLang === 'hinglish') {
-      return `Ye humare kuch popular picks hain jo aapko zaroor pasand aayenge! 🏔️\n\n${lines.join('\n')}\n\nKisi ke baare mein detail chahiye? Ya [Message on Whatsapp](${waLink}) 😊`;
+      return `Ye humare kuch popular picks hain jo aapko zaroor pasand aayenge! 🏔️\n\n${lines.join('\n')}\n\nKisi ke baare mein detail chahiye? Ya [Message on Whatsapp](${waLink})`;
     }
-    return `Here are some popular picks you'll love! 🏔️\n\n${lines.join('\n')}\n\nWant details on any of these? Or [Message on Whatsapp](${waLink}) 😊`;
+    return `Here are some popular picks you'll love! 🏔️\n\n${lines.join('\n')}\n\nWant details on any of these? Or [Message on Whatsapp](${waLink})`;
   }
 
   // ── 17. About / Who are you (expanded terms + 2009) ───────────────
-  const ABOUT_TERMS = [
-    'about himshakti', 'about him shakti', 'himshakti kya hai', 'himshakti foods kya',
-    'what is himshakti', 'who is himshakti', 'aap kaun ho', 'aap kon ho',
-    'who are you', 'ye company kya hai', 'ye brand kya hai', 'tumhare baare mein',
-    'aapke baare mein', 'apke bare mein', 'tell me about yourself',
-    'about this company', 'about this brand', 'about your company',
-    'tum kon', 'tum kaun', 'tum kya', 'kon ho tum', 'kaun ho tum',
-    'tumhra kaam', 'tumhara kaam', 'aapka kaam', 'tera kaam',
-    'kya karte ho', 'kya krti ho', 'kya krte ho', 'what do you do',
-  ];
   if (containsAny(lower, ABOUT_TERMS)) {
     if (userLang === 'hindi') {
-      return 'HimShakti Foods 2009 से Uttarakhand के किसानों और छोटे उत्पादकों से सीधे authentic पहाड़ी खाना लाता है — बिना बिचौलियों के, बिना preservatives के! 🏔️\n\nWhatsApp पर order करो, कोई checkout नहीं। About page pe poori kahani padhiye! 😊';
+      return 'HimShakti Foods 2009 से Uttarakhand के किसानों और छोटे उत्पादकों से सीधे authentic पहाड़ी खाना लाता है — बिना बिचौलियों के, बिना preservatives के! 🏔️\n\nWhatsApp पर order करो, कोई checkout नहीं। About page pe poori kahani padhiye!';
     }
     if (userLang === 'hinglish') {
-      return 'HimShakti Foods 2009 se Uttarakhand ke farmers se seedha authentic Pahadi khana laata hai — no middlemen, no preservatives! 🏔️\n\nWhatsApp pe order karo, koi checkout nahi. About page pe poori story padh sakte hain! 😊';
+      return 'HimShakti Foods 2009 se Uttarakhand ke farmers se seedha authentic Pahadi khana laata hai — no middlemen, no preservatives! 🏔️\n\nWhatsApp pe order karo, koi checkout nahi. About page pe poori story padh sakte hain!';
     }
-    return 'HimShakti Foods has been bringing authentic Himalayan foods directly from Uttarakhand farmers since 2009 — no middlemen, no preservatives! 🏔️\n\nOrder via WhatsApp, no checkout needed. Check our About page for the full story! 😊';
+    return 'HimShakti Foods has been bringing authentic Himalayan foods directly from Uttarakhand farmers since 2009 — no middlemen, no preservatives! 🏔️\n\nOrder via WhatsApp, no checkout needed. Check our About page for the full story!';
   }
 
   // ── 18. Product intent (order/buy/price — only if product matched) ──
   if (containsAny(lower, PRODUCT_INTENT_TERMS)) {
-    const matchedProduct = matchProductInText(lower, products);
+    // Try direct match first, then fall back to last-mentioned product for
+    // pronoun references like "iska price", "yeh order karo"
+    let matchedProduct = matchProductInText(lower, products);
+    if (!matchedProduct && allMessages) {
+      matchedProduct = getLastMentionedProduct(allMessages, products);
+    }
     if (matchedProduct) {
 
       let statusInfo = '';
       if (matchedProduct.outOfStock) {
         statusInfo = userLang === 'hindi'
-          ? ' 🚫 **यह प्रोडक्ट अभी स्टॉक में नहीं है।**'
-          : ' 🚫 **This product is currently out of stock.**';
+          ? ' **यह प्रोडक्ट अभी स्टॉक में नहीं है।**'
+          : ' **This product is currently out of stock.**';
       } else if (matchedProduct.onSale) {
         statusInfo = userLang === 'hindi'
-          ? ' 🔥 **अभी सेल पर है!**'
-          : ' 🔥 **Currently on sale!**';
+          ? ' **अभी सेल पर है!**'
+          : ' **Currently on sale!**';
       }
 
       if (matchedProduct.outOfStock) {
         return userLang === 'hindi'
-          ? `**${matchedProduct.name}**${statusInfo} अभी इसका ऑर्डर नहीं ले सकते。 कृपया कुछ समय बाद दोबारा चेक करें। 😊`
-          : `**${matchedProduct.name}**${statusInfo} We can't take orders for this right now. Please check back soon. 😊`;
+          ? `**${matchedProduct.name}**${statusInfo} अभी इसका ऑर्डर नहीं ले सकते। कृपया कुछ समय बाद दोबारा चेक करें।`
+          : `**${matchedProduct.name}**${statusInfo} We can't take orders for this right now. Please check back soon.`;
       }
 
       const msg = `Namaste HimShakti!\nI'd like to order:\n\n*${matchedProduct.name}* — ₹${matchedProduct.price}\nQty: 1\n\nPlease share payment & delivery details.`;
@@ -670,31 +745,62 @@ function tryFastPathReply(userText, products, contact, userLang) {
       const productWaLink = `${waLink}?text=${prefilledText}`;
 
       return userLang === 'hindi'
-        ? `**${matchedProduct.name}** — ₹${matchedProduct.price}${statusInfo}\n[Order on WhatsApp](${productWaLink}) — बस कितनी quantity चाहिए बता दीजिए, हम payment और delivery details वहीं share कर देंगे। 😊`
-        : `**${matchedProduct.name}** — ₹${matchedProduct.price}${statusInfo}\n[Order on WhatsApp](${productWaLink}) — just mention the quantity you'd like, and we'll share payment & delivery details there. 😊`;
+        ? `**${matchedProduct.name}** — ₹${matchedProduct.price}${statusInfo}\n[Order on WhatsApp](${productWaLink}) — बस कितनी quantity चाहिए बता दीजिए, हम payment और delivery details वहीं share कर देंगे।`
+        : `**${matchedProduct.name}** — ₹${matchedProduct.price}${statusInfo}\n[Order on WhatsApp](${productWaLink}) — just mention the quantity you'd like, and we'll share payment & delivery details there.`;
     }
-    // No product matched — don't return, let it fall through to LLM
+    // No product matched — log and let it fall through to LLM
+    console.log(`product-miss: intent=order, query="${text.slice(0, 50)}"`);
   }
 
-  // ── 19. Product info (tell me about X, X batao) ─────────────────
-  const PRODUCT_INFO_TERMS = [
-    'tell me about', 'details of', 'detail of', 'info about', 'information about',
-    'ke baare mein', 'ke bare mein', 'batao', 'btao', 'dikhao', 'details batao',
-    'kya hai', 'kya hota hai', 'ingredients kya', 'shelf life kya',
-    'describe', 'explain', 'what is',
-  ];
+  // ── 19. Comparison intent (compare X vs Y) ──────────────────────
+  if (containsAny(lower, COMPARE_TERMS)) {
+    const matched = matchAllProductsInText(lower, products);
+    if (matched.length >= 2) {
+      const lines = matched.slice(0, 3).map((p) => {
+        const ing = p.ingredients?.length ? `Ingredients: ${p.ingredients.join(', ')}` : '';
+        const wt = p.weight || '';
+        return `• **${p.name}** — ₹${p.price}${wt ? ` | ${wt}` : ''}${ing ? ` | ${ing}` : ''}`;
+      });
+      if (userLang === 'hindi') {
+        return `यहाँ comparison है:\n\n${lines.join('\n')}\n\nकोई भी ऑर्डर करने के लिए [Message on Whatsapp](${waLink})`;
+      }
+      return `Here's a quick comparison:\n\n${lines.join('\n')}\n\nTo order any of these, [Message on Whatsapp](${waLink})`;
+    }
+    // Only one or zero products matched — let LLM handle
+  }
+
+  // ── 20. Bulk order intent ───────────────────────────────────────
+  if (containsAny(lower, BULK_TERMS)) {
+    if (userLang === 'hindi') {
+      return `Bulk/wholesale orders ke liye कृपया हमें [Message on Whatsapp](${waLink}) करें — हम quantity, pricing, और delivery details share कर देंगे! 📦`;
+    }
+    if (userLang === 'hinglish') {
+      return `Bulk/wholesale orders ke liye please humein [Message on Whatsapp](${waLink}) karein — hum quantity, pricing aur delivery details share kar denge! 📦`;
+    }
+    return `For bulk/wholesale orders, please [Message on Whatsapp](${waLink}) — we'll share quantity pricing and delivery details! 📦`;
+  }
+
+  // ── 21. Product info (tell me about X, X batao) ─────────────────
   if (containsAny(lower, PRODUCT_INFO_TERMS)) {
-    const matchedProduct = matchProductInText(lower, products);
-    if (matchedProduct) {
-      return buildProductDetailReply(matchedProduct, waLink, userLang);
+    const matched = matchAllProductsInText(lower, products);
+    if (matched.length > 1) {
+      // Multiple products mentioned — show brief details for each
+      const lines = matched.slice(0, 4).map((p) => {
+        const sale = p.onSale ? ' Sale' : '';
+        const stock = p.outOfStock ? ' ❌ Out of Stock' : '';
+        return `• **${p.name}** — ₹${p.price}${sale}${stock}`;
+      });
+      if (userLang === 'hindi') {
+        return `यहाँ details हैं:\n\n${lines.join('\n')}\n\nKisi ek ke baare mein aur jaanna hai?`;
+      }
+      return `Here are the details:\n\n${lines.join('\n')}\n\nWant to know more about any specific one?`;
+    }
+    if (matched.length === 1) {
+      return buildProductDetailReply(matched[0], waLink, userLang);
     }
   }
 
-  // ── 20. Category browse ─────────────────────────────────────────
-  const CATEGORY_BROWSE_TERMS = [
-    'show me', 'dikhao', 'dikha do', 'list karo', 'products in',
-    'wale products', 'category mein', 'category ke',
-  ];
+  // ── 22. Category browse ─────────────────────────────────────────
   if (containsAny(lower, CATEGORY_BROWSE_TERMS)) {
     const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
     const matchedCat = categories.find((c) => lower.includes(c.toLowerCase()));
@@ -702,17 +808,17 @@ function tryFastPathReply(userText, products, contact, userLang) {
       const catProducts = products.filter((p) => p.category === matchedCat);
       const lines = catProducts.map((p) => {
         const stock = p.outOfStock ? ' ❌ Out of Stock' : '';
-        const sale = p.onSale ? ' 🔥 Sale' : '';
+        const sale = p.onSale ? ' Sale' : '';
         return `• **${p.name}** — ₹${p.price}${sale}${stock}`;
       });
       if (userLang === 'hindi') {
-        return `**${matchedCat}** category mein humare paas ${catProducts.length} products hain:\n\n${lines.join('\n')}\n\nKisi ke baare mein detail chahiye? 😊`;
+        return `**${matchedCat}** category mein humare paas ${catProducts.length} products hain:\n\n${lines.join('\n')}\n\nKisi ke baare mein detail chahiye?`;
       }
-      return `We have ${catProducts.length} products in **${matchedCat}**:\n\n${lines.join('\n')}\n\nWant details on any of these? 😊`;
+      return `We have ${catProducts.length} products in **${matchedCat}**:\n\n${lines.join('\n')}\n\nWant details on any of these?`;
     }
   }
 
-  // ── 21. Bare product name match (LAST — only exact or very close) ──
+  // ── 23. Bare product name match (LAST — only exact or very close) ──
   // Only matches if the user's ENTIRE message is basically a product name
   {
     const matchedProduct = matchProductInText(lower, products);
@@ -721,6 +827,8 @@ function tryFastPathReply(userText, products, contact, userLang) {
     }
   }
 
+  // No fast-path matched — log for analytics to improve synonym coverage
+  console.log(`chat-miss: no fast-path for "${text.slice(0, 60)}"`);
   return null; 
 }
 
@@ -797,7 +905,7 @@ export default async function handler(req, res) {
       .slice(-MAX_HISTORY_MESSAGES)
       .map((m) => ({
         role: m.role,
-        content: m.content.slice(0, MAX_MESSAGE_LEN),
+        content: sanitizeInput(m.content),
       }));
 
     const cleanMessages = [];
@@ -818,7 +926,7 @@ export default async function handler(req, res) {
     const userLang = detectLanguageFromMessages(cleanMessages);
 
     const lastUserMessage = [...cleanMessages].reverse().find((m) => m.role === 'user')?.content || '';
-    const fastReply = tryFastPathReply(lastUserMessage, products, contact, userLang);
+    const fastReply = tryFastPathReply(lastUserMessage, products, contact, userLang, cleanMessages);
     if (fastReply) {
       return res.status(200).json({ reply: fastReply });
     }
@@ -831,7 +939,10 @@ export default async function handler(req, res) {
       return res.status(200).json({ reply: busyMsg });
     }
 
-    const systemPrompt = buildSystemPrompt(products, contact || {});
+    const allText = cleanMessages.map((m) => m.content).join(' ');
+    const contextProducts = matchAllProductsInText(allText.toLowerCase(), products);
+    const contextProductIds = contextProducts.map((p) => p.id?.toString());
+    const systemPrompt = buildSystemPrompt(products, contact || {}, contextProductIds);
     const finalMessages = [{ role: 'system', content: systemPrompt }, ...cleanMessages];
 
     await ChatAttempt.create({ ip });
@@ -876,4 +987,3 @@ export default async function handler(req, res) {
     return res.status(200).json({ reply: fallback });
   }
 }
-

@@ -50,6 +50,16 @@ const GREETING = {
   content: "Namaste! 🙏 Welcome to HimShakti Foods.\nHow can I help you today?",
 };
 
+
+
+function formatTime(id) {
+  try {
+    const ts = parseInt(id.split('-')[1], 10);
+    if (!ts || isNaN(ts)) return '';
+    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch { return ''; }
+}
+
 // A friendly robot face — antenna, rounded head, two round "ear"
 // side-bumps, and simple dot eyes — reads clearly as "AI assistant"
 // rather than a generic chat bubble. Drawn as a single-color
@@ -112,6 +122,7 @@ export default function ChatWidget() {
   // True whenever a reply has arrived while the panel was closed — shows
   // a blinking red dot on the launcher button until it's opened again.
   const [hasUnread, setHasUnread] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const listRef = useRef(null);
   const inputRef = useRef(null);
@@ -146,6 +157,22 @@ export default function ChatWidget() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
+
+
+
+  // Online/offline detection
+  useEffect(() => {
+    const goOnline = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
+
+
 
   const waFallback = contact?.whatsappNumber
     ? `https://wa.me/${contact.whatsappNumber}?text=${encodeURIComponent('Namaste HimShakti!')}`
@@ -240,12 +267,19 @@ export default function ChatWidget() {
             </button>
           </div>
 
+          {/* Offline banner */}
+          {!isOnline && (
+            <div className="bg-red-500/90 text-white text-center text-[12px] py-1.5 px-3 shrink-0">
+              ⚡ You're offline — messages won't send until you reconnect.
+            </div>
+          )}
+
           {/* Messages */}
           <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 bg-mist">
             {messages.map((m) => (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap break-words
+                  className={`max-w-[85%] rounded-2xl px-3 pt-2.5 pb-1.5 text-[13.5px] leading-relaxed break-words flex flex-col
                     ${
                       m.role === 'user'
                         ? 'bg-forest dark:bg-sage text-white rounded-br-md'
@@ -254,33 +288,45 @@ export default function ChatWidget() {
                         : 'bg-surface text-ink border border-edge/8 rounded-bl-md'
                     }`}
                 >
-                  <ReactMarkdown
-                    components={{
-                      a: ({ node, ...props }) => (
-                        <a
-                          {...props}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`font-bold underline underline-offset-2 ${
-                            m.role === 'user' ? 'text-white' : 'text-heading hover:text-wa-dk'
-                          }`}
-                        />
-                      ),
-                      p: ({ node, ...props }) => <p {...props} className="mb-2 last:mb-0" />,
-                    }}
-                  >
-                    {m.content}
-                  </ReactMarkdown>
-
-                  {m.isError && waFallback && (
-                    <a
-                      href={waFallback}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block mt-2 text-[12.5px] font-bold text-wa-dk underline underline-offset-2"
+                  <div className="whitespace-pre-wrap">
+                    <ReactMarkdown
+                      components={{
+                        a: ({ node, ...props }) => (
+                          <a
+                            {...props}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`font-bold underline underline-offset-2 ${
+                              m.role === 'user' ? 'text-white' : 'text-heading hover:text-wa-dk'
+                            }`}
+                          />
+                        ),
+                        p: ({ node, ...props }) => <p {...props} className="mb-1.5 last:mb-0" />,
+                      }}
                     >
-                      Message us on WhatsApp →
-                    </a>
+                      {m.content}
+                    </ReactMarkdown>
+
+                    {m.isError && waFallback && (
+                      <a
+                        href={waFallback}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block mt-1.5 text-[12.5px] font-bold text-wa-dk underline underline-offset-2"
+                      >
+                        Message us on WhatsApp →
+                      </a>
+                    )}
+                  </div>
+                  
+                  {m.id !== 'greeting' && formatTime(m.id) && (
+                    <div
+                      className={`text-[10px] leading-none mt-1 self-end ${
+                        m.role === 'user' ? 'text-white/70' : 'text-ink-3/70'
+                      }`}
+                    >
+                      {formatTime(m.id)}
+                    </div>
                   )}
                 </div>
               </div>
@@ -290,7 +336,7 @@ export default function ChatWidget() {
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {[
                   { label: '🛒 Show Products', text: 'Show all products' },
-                  { label: '🔥 What\'s on sale?', text: 'What products are on sale?' },
+                  { label: 'What\'s on sale?', text: 'What products are on sale?' },
                   { label: '💰 How to order?', text: 'How do I place an order?' },
                   { label: '🚚 Delivery info', text: 'How long does delivery take?' },
                   { label: '❌ Cancel products', text: 'I want to cancel my order/products' },
@@ -324,16 +370,23 @@ export default function ChatWidget() {
               ref={inputRef}
               rows={1}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                // Auto-resize textarea to fit content
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 96) + 'px';
+              }}
               onKeyDown={handleKeyDown}
               placeholder="Ask about products, orders, delivery…"
               maxLength={200}
+              disabled={!isOnline}
               className="flex-1 resize-none max-h-24 px-3.5 py-2.5 rounded-xl bg-mist border border-edge/12
-                text-[13.5px] text-ink placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-amber/25 focus:border-amber"
+                text-[13.5px] text-ink placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-amber/25 focus:border-amber
+                disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <button
               onClick={() => handleSend()}
-              disabled={!input.trim() || sending}
+              disabled={!input.trim() || sending || !isOnline}
               aria-label="Send message"
               className="w-10 h-10 shrink-0 rounded-full bg-amber hover:bg-amber-lt text-white flex items-center
                 justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
