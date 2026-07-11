@@ -6,7 +6,7 @@
 import { connectDB } from '../../lib/db.js';
 import Testimonial from '../../lib/Testimonial.js';
 import { isAuthorized } from '../../lib/auth.js';
-import { getNextId } from '../../lib/Counter.js';
+import { getNextId, getNextIds } from '../../lib/Counter.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -39,11 +39,11 @@ export default async function handler(req, res) {
       // One counter increment per item, awaited in order — see
       // lib/Counter.js for why this avoids duplicate ids under
       // concurrent requests.
-      const toInsert = [];
-      for (const t of items) {
-        const id = await getNextId('Testimonial');
-        toInsert.push({ ...t, id });
-      }
+      const ids = await getNextIds('Testimonial', items.length);
+      const toInsert = items.map((t, index) => ({
+        ...t,
+        id: ids[index]
+      }));
 
       const created = await Testimonial.insertMany(toInsert);
       return res.status(201).json({ inserted: created.length });
