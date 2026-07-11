@@ -8,7 +8,7 @@
 import { connectDB } from '../../lib/db.js';
 import Product from '../../lib/Product.js';
 import { isAuthorized } from '../../lib/auth.js';
-import { getNextId } from '../../lib/Counter.js';
+import { getNextId, getNextIds } from '../../lib/Counter.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -42,11 +42,11 @@ export default async function handler(req, res) {
       // itself atomic (see lib/Counter.js), so even if another request
       // (a single POST, or another import) runs at the exact same time,
       // nobody ends up handed the same id twice.
-      const toInsert = [];
-      for (const p of items) {
-        const id = await getNextId('Product');
-        toInsert.push({ ...p, id });
-      }
+      const ids = await getNextIds('Product', items.length);
+      const toInsert = items.map((p, index) => ({
+        ...p,
+        id: ids[index]
+      }));
 
       const created = await Product.insertMany(toInsert);
       return res.status(201).json({ inserted: created.length });
