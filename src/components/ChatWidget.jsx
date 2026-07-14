@@ -255,7 +255,7 @@ export default function ChatWidget() {
           {/* Header */}
           <div className="bg-forest px-5 py-4 flex items-center justify-between shrink-0">
             <div>
-              <p className="font-serif text-white text-[1.05rem] leading-tight">HimShakti Assistant</p>
+              <p className="font-serif text-white text-[1.05rem] leading-tight">HimShakti AI Assistant</p>
               <p className="text-gold/70 text-[11px] font-medium mt-0.5">Products · Ordering · Delivery</p>
             </div>
             <button
