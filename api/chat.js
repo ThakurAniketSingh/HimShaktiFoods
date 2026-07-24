@@ -24,7 +24,7 @@ const MAX_MESSAGE_LEN = 200;
 function sanitizeInput(text) {
   if (typeof text !== 'string') return '';
   return text
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // strip control chars
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
     .trim()
     .slice(0, MAX_MESSAGE_LEN);
 }
