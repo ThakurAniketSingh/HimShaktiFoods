@@ -1,5 +1,6 @@
 # PROMPTS.md — HimShakti AI Assistant
 
+
 How the prompt for the HimShakti Foods chat assistant (`api/chat.js`, Groq's
 `openai/gpt-oss-20b`) was built and improved, step by step.
 
