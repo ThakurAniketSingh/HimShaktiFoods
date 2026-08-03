@@ -131,3 +131,25 @@ as its only source of truth.
 - **Setup:** add a `GROQ_API_KEY` environment variable.
 - **Cost/Rate-Limits:** The backend intelligently rates limit IPs. If a user exceeds the limit, a friendly fallback message is shown instead of crashing.
 - **Freshness:** product/contact edits reach the assistant within 30 seconds (`CACHE_TTL` in `api/chat.js`).
+
+## Deployment
+
+- **Live App:** https://himshakti.vercel.app
+- **Frontend + Backend:** Both hosted together on Vercel — the frontend 
+  is a Vite/React SPA, and the backend is a set of Vercel Serverless 
+  Functions under /api (no separate Render deployment needed).
+- **Database:** MongoDB Atlas (cloud-hosted)
+
+### Tech Stack
+- Frontend: React + Vite + Tailwind CSS
+- Backend: Vercel Serverless Functions (Node.js)
+- Database: MongoDB Atlas + Mongoose
+- AI: Groq API (openai/gpt-oss-20b)
+
+### Known Limitations on Free Tier
+- MongoDB Atlas M0 (free tier) has a 512MB storage cap and shared CPU — 
+  fine for this project's scale, but not for high traffic.
+- Vercel Serverless Functions have a cold-start delay (~1-2 seconds) 
+  after periods of inactivity, since each function spins up fresh.
+- Groq's free tier has a rate limit on API calls, which the app handles 
+  gracefully with retries and fallback replies.
